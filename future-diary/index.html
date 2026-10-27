@@ -435,7 +435,7 @@ function findResumeDay(duration=state.duration){
   // 如果该天已有部分内容，进入后可接着编辑；不会因为保存过就跳过。
   for(let d=1; d<=duration; d++){
     const e=state.entries[d] || {};
-    if(e.status !== "done") return d;
+    if(e.completed !== true && e.status !== "done") return d;
   }
   // 整个周期都完成时，停在最后一天，方便回看并测试纪念卡。
   return duration;
@@ -535,7 +535,9 @@ document.getElementById("saveMorning").onclick=()=>{
 };
 document.getElementById("saveEvening").onclick=()=>{
   const e=getEntry(cur); const sel=document.querySelector("#statusOpts button.on");
-  e.status=sel?sel.dataset.s:""; e.evening=document.getElementById("eveningText").value.trim(); save();
+  e.status=sel?sel.dataset.s:""; e.evening=document.getElementById("eveningText").value.trim();
+  // “保存夜晚”代表这一天的记录流程已完成；状态选项描述的是期待是否发生，两者不是一回事。
+  e.completed=true; save();
   const stTxt={done:"✨ 完成了",part:"🌱 部分发生",none:"🔜 还没发生（也很好）"}[e.status];
   document.getElementById("eveningRecap").innerHTML = e.evening ? `<div class="recap"><div class="head">🌙 夜晚回看 · ${stTxt||""}</div><div class="body">${escapeHtml(e.evening)}</div></div>` : "";
   document.getElementById("eveningTip").textContent="已保存 ✓"; toast("夜晚已保存"); updateStats(); updateAfterDayTools();
