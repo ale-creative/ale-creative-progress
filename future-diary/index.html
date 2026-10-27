@@ -1,0 +1,914 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"/>
+<title>3分钟未来日记｜阿乐制作</title>
+<style>
+  :root{
+    --paper:#FBF6EC;
+    --paper-2:#F4ECDB;
+    --card:#FFFFFF;
+    --ink:#2B2620;          /* 主文字：深，强对比 */
+    --ink-2:#5C5347;        /* 次级文字 */
+    --muted:#8A7F6E;        /* 标签/提示 */
+    --gold:#C98A2B;
+    --gold-2:#E0A93C;
+    --gold-soft:#FCF3E2;
+    --line:#E7DAC0;
+    --green:#5E8C5E;
+    --shadow:0 6px 22px rgba(120,90,40,.14);
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;-webkit-text-size-adjust:100%;text-size-adjust:100%;}
+  body{
+    font-family:"Noto Serif SC","Songti SC","SimSun",serif;
+    background:var(--paper);
+    color:var(--ink);
+    min-height:100vh;
+    line-height:1.85;
+    font-size:16px;
+    -webkit-font-smoothing:antialiased;
+  }
+  /* 纸张微纹理 */
+  body::before{
+    content:"";position:fixed;inset:0;pointer-events:none;z-index:0;
+    background:
+      radial-gradient(1200px 600px at 50% -10%, #fffdf7 0%, rgba(255,253,247,0) 60%),
+      radial-gradient(900px 500px at 100% 100%, #f6ecd6 0%, rgba(246,236,214,0) 55%);
+  }
+  .wrap,.cover{position:relative;z-index:1;}
+  .wrap{max-width:600px;margin:0 auto;padding:22px 20px 90px;}
+  .hand{font-family:"Ma Shan Zheng","STKaiti",cursive;}
+
+  /* ---------- COVER ---------- */
+  .cover{
+    min-height:100vh;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;text-align:center;padding:36px 22px;
+  }
+  .maker-mark{
+    display:inline-flex;align-items:center;gap:7px;margin-bottom:22px;padding:8px 17px;
+    border:1.5px solid #C98A2B;border-radius:999px;background:linear-gradient(180deg,#FFF8E9,#F7E8C8);
+    color:#81531B;font-family:"Noto Serif SC","Songti SC",serif;font-size:15px;font-weight:800;letter-spacing:1.5px;
+    box-shadow:0 4px 12px rgba(150,103,35,.12);
+  }
+  .maker-mark span{font-size:11px;font-weight:500;letter-spacing:.3px;color:#8A7F6E;}
+  .book{
+    font-family:"Ma Shan Zheng",cursive;
+    font-size:60px;line-height:1.12;color:var(--ink);letter-spacing:3px;
+  }
+  .book small{display:block;font-family:"Noto Serif SC",serif;font-size:18px;
+    color:var(--gold);margin-top:14px;letter-spacing:4px;font-weight:500;}
+  .tagline{font-size:21px;color:var(--ink-2);margin:30px 0 4px;font-weight:500;letter-spacing:1px;}
+  .from{font-size:13.5px;color:var(--muted);margin-top:30px;line-height:1.7;}
+  .btn{
+    font-family:"Noto Serif SC",serif;cursor:pointer;border:none;border-radius:40px;
+    padding:15px 52px;font-size:21px;font-weight:600;color:#fff;
+    background:linear-gradient(180deg,var(--gold-2),var(--gold));
+    box-shadow:0 8px 20px rgba(201,138,43,.35);transition:transform .12s ease,box-shadow .12s;
+  }
+  .btn:active{transform:translateY(2px);box-shadow:0 4px 12px rgba(201,138,43,.3);}
+  .btn.ghost{background:transparent;color:var(--gold);box-shadow:none;font-size:14px;padding:8px 14px;text-decoration:underline;font-weight:500;}
+  .dur-pick{margin:24px 0 4px;display:flex;flex-wrap:wrap;gap:9px;justify-content:center;}
+  .dur-pick button{
+    font-family:"Noto Serif SC",serif;cursor:pointer;border:1.5px solid var(--line);
+    background:var(--gold-soft);color:var(--ink-2);border-radius:30px;padding:9px 17px;font-size:15.5px;font-weight:500;
+    transition:.15s;
+  }
+  .dur-pick button.on{border-color:var(--gold);background:var(--gold);color:#fff;font-weight:600;}
+
+  /* ---------- TOP BAR ---------- */
+  .topbar{
+    position:sticky;top:0;z-index:20;background:rgba(251,246,236,.94);backdrop-filter:blur(6px);
+    padding:13px 0 11px;border-bottom:1px solid var(--line);
+    display:flex;align-items:center;justify-content:space-between;gap:8px;
+  }
+  .topbar .day{font-size:18px;font-weight:600;color:var(--ink);}
+  .topbar .nav{display:flex;gap:7px;}
+  .topbar .nav button{
+    font-family:"Noto Serif SC",serif;cursor:pointer;border:1.5px solid var(--line);background:var(--gold-soft);
+    border-radius:10px;width:40px;height:36px;font-size:19px;color:var(--ink-2);font-weight:600;
+  }
+  .topbar .nav button:disabled{opacity:.35;cursor:default;}
+  .progress{height:8px;background:var(--paper-2);border-radius:10px;overflow:hidden;margin:11px 0 0;}
+  .progress > i{display:block;height:100%;background:linear-gradient(90deg,var(--gold-2),var(--gold));width:0;transition:width .35s;}
+  .theme-badge{
+    display:inline-block;font-size:15px;font-weight:600;color:var(--gold);
+    border:1.5px solid var(--gold);border-radius:20px;padding:4px 16px;margin:16px 0 2px;background:var(--gold-soft);
+  }
+
+  /* ---------- CARD ---------- */
+  .card{
+    background:var(--card);border:1px solid var(--line);border-radius:18px;
+    padding:20px 18px;margin:16px 0;box-shadow:var(--shadow);
+  }
+  .card h3{font-family:"Noto Serif SC","Songti SC",serif;margin:0 0 14px;font-size:20px;color:var(--gold);letter-spacing:1px;}
+  .label{font-size:14.5px;color:var(--muted);margin:16px 0 7px;font-weight:600;letter-spacing:.2px;line-height:1.55;}
+  .label:first-of-type{margin-top:0;}
+
+  /* 引导语 */
+  .trace{
+    background:var(--gold-soft);border-radius:12px;padding:14px 16px;color:#9a7b3e;
+    font-size:16px;line-height:1.75;border-left:4px solid var(--gold);font-weight:500;
+  }
+
+  /* 书写区（内容主角） */
+  .write-block{
+    background:linear-gradient(180deg,#fffdf8,#fffaf0);
+    border:1.5px solid var(--line);border-radius:14px;padding:16px 16px 14px;margin-top:6px;
+  }
+  .prefill{display:block;}
+  .prefill .fix{display:block;font-size:17px;line-height:1.55;font-weight:700;color:var(--gold);white-space:normal;margin-bottom:6px;}
+  textarea{
+    display:block;width:100%;min-width:0;font-family:"Noto Serif SC","Songti SC",serif;font-size:17px;line-height:1.75;color:var(--ink);
+    border:none;background:transparent;resize:vertical;min-height:190px;outline:none;padding:8px 0;overflow-wrap:anywhere;
+  }
+  textarea::placeholder{color:#c3b79f;}
+  .write-block:focus-within{border-color:var(--gold);box-shadow:0 0 0 3px rgba(224,169,60,.18);}
+
+  /* 已保存的日记展示（凸显内容） */
+  .recap{
+    margin-top:14px;background:var(--gold-soft);border-radius:12px;padding:14px 16px;
+    border:1px dashed var(--gold);
+  }
+  .recap .head{font-size:13px;color:var(--gold);font-weight:600;margin-bottom:6px;display:flex;align-items:center;gap:6px;}
+  .recap .body{font-size:17px;line-height:1.8;color:var(--ink);font-weight:500;overflow-wrap:anywhere;}
+  .recap .emo{margin-top:8px;font-size:15px;color:var(--ink-2);}
+
+  .chips{display:flex;flex-wrap:wrap;gap:9px;margin-top:12px;}
+  .chips button{
+    font-family:"Noto Serif SC",serif;cursor:pointer;border:1.5px solid var(--line);background:var(--gold-soft);
+    color:var(--ink-2);border-radius:20px;padding:8px 15px;font-size:15px;font-weight:500;transition:.12s;
+  }
+  .chips button.on{background:var(--gold);color:#fff;border-color:var(--gold);font-weight:600;}
+
+  .row-btns{display:flex;gap:12px;margin-top:16px;align-items:center;flex-wrap:wrap;}
+  .save{
+    font-family:"Noto Serif SC",serif;cursor:pointer;border:none;border-radius:30px;
+    padding:11px 26px;font-size:17px;font-weight:600;color:#fff;background:linear-gradient(180deg,var(--gold-2),var(--gold));
+    box-shadow:0 5px 14px rgba(201,138,43,.3);
+  }
+  .save:active{transform:translateY(2px);}
+  .saved-tip{font-size:14.5px;color:var(--green);font-weight:600;}
+
+  .status-opt{display:flex;gap:9px;flex-wrap:wrap;margin-top:4px;}
+  .status-opt button{
+    font-family:"Noto Serif SC",serif;cursor:pointer;border:1.5px solid var(--line);background:var(--gold-soft);
+    color:var(--ink-2);border-radius:12px;padding:11px 10px;font-size:15.5px;font-weight:500;flex:1;min-width:92px;transition:.12s;
+  }
+  .status-opt button.on{background:var(--gold);color:#fff;border-color:var(--gold);font-weight:600;}
+
+  /* ---------- STATS ---------- */
+  .stats{display:flex;gap:11px;margin-top:6px;}
+  .stat{flex:1;background:var(--gold-soft);border:1px solid var(--line);border-radius:14px;padding:14px 6px;text-align:center;}
+  .stat b{display:block;font-size:27px;color:var(--gold);font-family:"Ma Shan Zheng",cursive;}
+  .stat span{font-size:13.5px;color:var(--muted);}
+
+  .footer-actions{display:flex;gap:10px;justify-content:center;margin-top:26px;flex-wrap:wrap;}
+  .footer-actions button{
+    font-family:"Noto Serif SC",serif;cursor:pointer;border:1.5px solid var(--line);
+    border-radius:16px;padding:15px 16px;font-size:16px;font-weight:700;min-height:54px;
+    flex:1 1 100%;width:100%;box-shadow:0 3px 10px rgba(70,50,20,.08);
+  }
+  /* 两个核心操作在页面底部明确突出，方便手机浏览器用户 */
+  #exportBtn{background:#58734F;border-color:#58734F;color:#fff;}
+  #backCover{background:#F3E4CA;border:2px solid #B98A4D;color:#59442B;}
+  .footer-actions button:active{transform:translateY(1px);filter:brightness(.97);}
+  @media(min-width:560px){.footer-actions{display:grid;grid-template-columns:1fr 1fr}.footer-actions button{width:100%;}}
+  .hidden{display:none !important;}
+  .toast{
+    position:fixed;left:50%;bottom:32px;transform:translateX(-50%);
+    background:var(--ink);color:#fff;padding:11px 24px;border-radius:30px;font-size:15.5px;font-weight:500;
+    z-index:90;opacity:0;transition:opacity .25s;pointer-events:none;
+  }
+  .toast.show{opacity:.94;}
+
+  /* ---------- MENU ---------- */
+  .overlay{position:fixed;inset:0;background:rgba(50,38,18,.45);z-index:50;display:none;}
+  .overlay.show{display:block;}
+  .sheet{
+    position:fixed;left:0;right:0;bottom:0;background:var(--paper);
+    border-radius:22px 22px 0 0;z-index:60;max-height:82vh;overflow:auto;
+    padding:20px 18px 34px;transform:translateY(100%);transition:transform .25s;
+  }
+  .sheet.show{transform:translateY(0);}
+  .sheet h4{font-family:"Ma Shan Zheng",cursive;margin:4px 0 14px;font-size:24px;color:var(--gold);text-align:center;}
+  .daygrid{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;}
+  .daygrid button{
+    font-family:"Noto Serif SC",serif;aspect-ratio:1;border:1.5px solid var(--line);background:var(--gold-soft);
+    border-radius:11px;font-size:16px;color:var(--ink-2);font-weight:600;cursor:pointer;position:relative;
+  }
+  .daygrid button.done{border-color:var(--gold);color:var(--gold);}
+  .daygrid button.today{box-shadow:0 0 0 2.5px var(--gold) inset;}
+  .daygrid button .dot{position:absolute;bottom:6px;left:50%;transform:translateX(-50%);width:6px;height:6px;border-radius:50%;background:var(--green);}
+
+
+  /* 阅读与书写字号统一：标签、正文、按钮有明确层级，书写区留足空间 */
+  .label{line-height:1.55;}
+  .trace{font-size:17px;line-height:1.8;}
+  .recap .body{font-size:18px;line-height:1.8;overflow-wrap:anywhere;}
+  .write-block{padding:14px 15px 12px;}
+  textarea{min-height:190px;line-height:1.75;font-size:17px;}
+  @media (max-width:420px){
+    .wrap{padding:14px 11px 82px;}
+    .card{padding:16px 13px;}
+    .card h3{font-size:18px;line-height:1.5;letter-spacing:.2px;}
+    .label{font-size:14px;}
+    .trace{font-size:15.5px;padding:13px 14px;}
+    .prefill .fix{font-size:16px;}
+    textarea{font-size:17px;min-height:190px;}
+    .recap{padding:13px 14px;}
+    .recap .body{font-size:17px;}
+    .save{font-size:16px;padding:11px 22px;}
+  }
+</style>
+
+</head>
+<body>
+
+<!-- ============ COVER ============ -->
+<div id="cover" class="cover">
+  <div class="maker-mark" aria-label="阿乐制作">阿乐制作 <span>· 一个小小的自我记录网页</span></div>
+  <div class="book">3分钟<br/>未来日记<small id="coverSub">写下期待，也看见生活的回应</small></div>
+  <p class="tagline">写下期待，也看见生活的回应</p>
+  <p style="font-size:13px;color:var(--muted);margin:8px 0 0;">会自动记住你的进度，下次打开接着写。</p>
+  <div>
+    <div style="font-size:14px;color:var(--muted);margin-bottom:4px;font-weight:600;">选择想写的周期</div>
+    <div class="dur-pick" id="durPick"></div>
+  </div>
+  <button class="btn" id="openBtn" style="margin-top:26px;">翻开</button>
+  <p class="from">每天 3 分钟，写下期待，也看见自己的变化。<br><span style="display:inline-block;margin-top:7px;font-size:12px;line-height:1.6;">灵感参考：山田弘美、滨田真由美《3分钟未来日记》</span></p>
+  <button class="btn ghost" id="resumeLink" style="margin-top:14px;">已经写过？继续上次记录</button>
+</div>
+
+<!-- ============ DIARY ============ -->
+<div id="diary" class="wrap hidden">
+  <div role="note" style="margin:0 0 14px;padding:13px 15px;border:1px solid #d8c5a4;border-radius:14px;background:#fff7e8;color:#6d5637;font-size:13px;line-height:1.75;">
+    <strong style="font-size:14px;">保存与数据安全提醒</strong><br>
+    网页会记住你的进度：优先打开尚未完成的日记；当天有写到一半的内容，会保留供你继续编辑。请点击「保存早晨」和「保存夜晚」确认保存。数据保存在当前浏览器的本地存储中，不会自动同步到其他设备；清除浏览器数据、更换浏览器或设备时，数据可能丢失。请定期点击页面底部「保存全部文字备份」留存副本。
+  </div>
+  <div class="topbar">
+    <div class="day" id="dayTitle">第 1 天</div>
+    <div class="nav">
+      <button id="prevBtn" title="前一天">‹</button>
+      <button id="menuBtn" title="目录">☰</button>
+      <button id="nextBtn" title="后一天">›</button>
+    </div>
+  </div>
+  <div id="themeBadge" class="theme-badge hidden"></div>
+
+  <!-- MORNING -->
+  <div class="card">
+    <h3>☀ 早晨 · 写未来（约3分钟）</h3>
+    <div class="label">① 今天的日期</div>
+    <div id="dateLine" style="font-size:17px;font-weight:600;color:var(--ink);"></div>
+
+    <div class="label">② 今日引导语（读一遍，进入状态）</div>
+    <div class="trace" id="traceText"></div>
+
+    <div class="label">③ 用过去式写下今天期待发生的一件好事</div>
+    <div class="write-block">
+      <div class="prefill">
+        <span class="fix">今天，我已经</span>
+        <textarea id="morningText" placeholder="……遇到了一件让我开心的小事，太好了。"></textarea>
+      </div>
+    </div>
+    <div id="morningRecap"></div>
+
+    <div class="label">④ 句尾加一句感受（可多选 / 自填）</div>
+    <div class="chips" id="emotionChips"></div>
+
+    <div class="row-btns">
+      <button class="save" id="saveMorning">保存早晨</button>
+      <span class="saved-tip" id="morningTip"></span>
+    </div>
+  </div>
+
+  <!-- EVENING -->
+  <div class="card">
+    <h3>🌙 夜晚 · 回来看（睡前 1 分钟）</h3>
+    <div class="label">你早上写的事，现在怎样了？</div>
+    <div class="status-opt" id="statusOpts">
+      <button data-s="done">✨ 完成了</button>
+      <button data-s="part">🌱 部分发生</button>
+      <button data-s="none">🔜 还没发生（也很好）</button>
+    </div>
+    <div class="label">回看发现 / 此刻想记下的</div>
+    <div class="write-block" style="padding:14px 16px;">
+      <textarea id="eveningText" placeholder="比如：虽然没完全如愿，但今天确实多了一个小幸运……"></textarea>
+    </div>
+    <div id="eveningRecap"></div>
+    <div class="row-btns">
+      <button class="save" id="saveEvening">保存夜晚</button>
+      <span class="saved-tip" id="eveningTip"></span>
+    </div>
+  </div>
+
+  <div id="afterDayTools" class="card hidden" style="padding:16px;border-radius:22px;background:#fffdf8;box-shadow:0 4px 18px rgba(120,90,40,.07);">
+    <div id="reflectionPanel" class="hidden" style="margin-top:16px;border-top:1px solid var(--line);padding-top:18px;background:#fffaf1;border-radius:18px;padding:18px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;">
+        <h3 id="reflectionTitle" style="margin:0;">阶段回顾</h3>
+        <button class="ghost" id="closeReflection" style="padding:6px 10px;">收起</button>
+      </div>
+      <div id="reflectionContent" style="margin-top:12px;line-height:1.8;"></div>
+      <button class="save" id="downloadShareCard" style="margin-top:14px;width:100%;display:none;">保存分享卡片图片</button>
+    </div>
+    <div id="weekExtras" style="display:none;margin-top:16px;padding-top:14px;border-top:1px solid var(--line);">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
+        <div style="font-size:30px;line-height:1;">🌿</div>
+        <div style="flex:1;">
+          <h3 id="exportTitle" style="margin:0 0 4px;font-size:21px;color:var(--ink);">把日子连起来，看看自己走过的路</h3>
+          <p id="exportDesc" style="margin:0;font-size:15px;line-height:1.7;color:var(--muted);">7天可以生成一张完整分享长图。</p>
+        </div>
+      </div>
+      <div id="weekTrailLine" style="display:none;"></div>
+      <button class="save" id="weekLongImageBtn" style="width:100%;font-size:17px;padding:15px 18px;display:none;">生成7天完整分享长图　→</button>
+      <button class="save" id="sevenDayCardBtn" style="width:100%;margin-top:9px;box-shadow:none;display:none;">生成7天完成纪念卡</button>
+      <div id="longImageOptions" style="display:none;margin-top:12px;gap:8px;align-items:stretch;flex-wrap:wrap;">
+        <label for="periodSelect" style="width:100%;font-size:14px;color:var(--muted);">选择要导出的周期</label>
+        <select id="periodSelect" style="width:100%;padding:12px;border:1px solid var(--line);border-radius:12px;background:#fffdf8;color:var(--ink);font-size:16px;"></select>
+        <button class="save" id="periodImageBtn" style="width:100%;box-shadow:none;">导出所选周期分享长图</button>
+        <button class="save" id="overviewImageBtn" style="width:100%;box-shadow:none;">解锁周期纪念卡</button>
+      </div>
+      <p id="longImageHint" style="display:none;font-size:13px;line-height:1.7;color:var(--muted);margin:9px 2px 0;">完成整个周期后解锁纪念分享卡。完整日记可随时使用下方「导出全部文字」保存。</p>
+    </div>
+    <div class="hidden" aria-hidden="true"><button id="weekReviewBtn"></button><button id="shareCardBtn"></button></div>
+  </div>
+
+  <div class="footer-actions">
+    <button id="exportBtn">保存全部文字备份　↓</button>
+    <button id="backCover">← 回到主页</button>
+  </div>
+</div>
+
+<!-- ============ MENU ============ -->
+<div class="overlay" id="overlay"></div>
+<div class="sheet" id="sheet">
+  <h4>目录 · 跳到某一天</h4>
+  <div class="daygrid" id="dayGrid"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* =================== 数据 =================== */
+const THEMES = [
+  {name:"小幸运",   trace:"今天，宇宙悄悄为我准备了一份让我嘴角上扬的小惊喜。"},
+  {name:"工作·家务·学习", trace:"今天，我已经轻松愉快地把该做的事顺手完成了。"},
+  {name:"新习惯",   trace:"今天，我已经自然而然地做到了那个想养成的新习惯。"},
+  {name:"好心情",   trace:"今天，我已经带着好心情，温柔地对待了自己和身边的人。"},
+  {name:"富足",     trace:"今天，我已经感受到生活丰盛，想要的刚刚好来到身边。"},
+  {name:"自己的魅力", trace:"今天，我已经看见并喜欢上了自己闪闪发光的样子。"},
+  {name:"神同步",   trace:"今天，我已经和刚好需要的人、事、物完美同步了。"},
+];
+const EMOTIONS = ["谢谢！","太棒了！","真的是太好了","好开心","感恩"];
+const DURATIONS = [7,49,365];
+
+/* =================== 状态 =================== */
+const KEY = "future-diary-user-experience-v1";
+let state = { duration:365, day:7, startDate:"", entries:{} };
+let cur = 1;
+function localISODate(date=new Date()){
+  const y=date.getFullYear(), m=String(date.getMonth()+1).padStart(2,"0"), d=String(date.getDate()).padStart(2,"0");
+  return `${y}-${m}-${d}`;
+}
+function load(){
+  try{
+    const saved=JSON.parse(localStorage.getItem(KEY));
+    if(saved && saved.entries){
+      state={
+        duration:DURATIONS.includes(Number(saved.duration))?Number(saved.duration):7,
+        day:Math.max(1,Math.min(Number(saved.day)||1,DURATIONS.includes(Number(saved.duration))?Number(saved.duration):7)),
+        startDate:/^\d{4}-\d{2}-\d{2}$/.test(saved.startDate||"")?saved.startDate:"",
+        entries:saved.entries||{}
+      };
+      cur=state.day;
+      return;
+    }
+  }catch(e){}
+  state={duration:7,day:1,startDate:localISODate(),entries:{}};
+  cur=1;
+  save();
+}
+function save(){
+  try{ localStorage.setItem(KEY,JSON.stringify(state)); return true; }
+  catch(e){ toast("本地保存失败，请及时导出文字备份"); return false; }
+}
+function getEntry(d){ return state.entries[d] || (state.entries[d]={morning:"",emotions:[],status:"",evening:"",review:""}); }
+function dateForDay(d){
+  const base=state.startDate||localISODate();
+  const date=new Date(`${base}T12:00:00`); date.setDate(date.getDate()+d-1);
+  return date;
+}
+function formatDayDate(d){
+  const date=dateForDay(d); const w="日一二三四五六"[date.getDay()];
+  return `${date.getMonth()+1}月${date.getDate()}日 周${w}`;
+}
+function dateRange(start,end){
+  const a=dateForDay(start), b=dateForDay(end);
+  const left=`${a.getMonth()+1}月${a.getDate()}日`, right=`${b.getMonth()+1}月${b.getDate()}日`;
+  return start===end?left:`${left} — ${right}`;
+}
+function themeForDay(d){
+  // 7天：一天一个主题；49天：每7天一个主题，7周走完7个主题；365天：每7天轮换并循环7个主题。
+  if(state.duration===7) return THEMES[(d-1)%THEMES.length];
+  if(state.duration===49) return THEMES[Math.min(6, Math.floor((d-1)/7))];
+  return THEMES[Math.floor((d-1)/7)%THEMES.length];
+}
+function fmtDate(){ const dt=new Date(); const w="日一二三四五六"[dt.getDay()]; return `${dt.getFullYear()} 年 ${dt.getMonth()+1} 月 ${dt.getDate()} 日 · 周${w}`; }
+function toast(msg){ const t=document.getElementById("toast"); t.textContent=msg; t.classList.add("show"); clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove("show"),1600); }
+
+/* =================== 封面 =================== */
+function buildCover(){
+  const pick=document.getElementById("durPick"); pick.innerHTML="";
+  DURATIONS.forEach(d=>{
+    const b=document.createElement("button");
+    b.textContent = d===7?"7 天体验 · 每天一个主题":d===49?"49 天练习 · 每周一个主题":"365 天持续记录 · 每周轮换主题";
+    if(d===state.duration) b.classList.add("on");
+    b.onclick=()=>{ state.duration=d; cur=findResumeDay(d); state.day=cur; buildCover(); save(); };
+    pick.appendChild(b);
+  });
+  document.getElementById("coverSub").textContent = (state.duration===7 ? "3分钟未来日记 · 7天体验" : state.duration===49 ? "3分钟未来日记 · 49天进阶" : "3分钟未来日记 · 365天持续记录");
+}
+function findResumeDay(duration=state.duration){
+  // 先找第一天尚未完成的日记：无内容或状态不是“完成了”都视为待继续。
+  // 如果该天已有部分内容，进入后可接着编辑；不会因为保存过就跳过。
+  for(let d=1; d<=duration; d++){
+    const e=state.entries[d] || {};
+    if(e.status !== "done") return d;
+  }
+  // 整个周期都完成时，停在最后一天，方便回看并测试纪念卡。
+  return duration;
+}
+document.getElementById("openBtn").onclick=()=>{
+  // 按所选周期自动续写：优先进入第一天未完成的日记；全完成则停在最后一天。
+  cur=findResumeDay(state.duration);
+  state.day=cur;
+  if(!state.startDate) state.startDate=localISODate();
+  save();
+  showDiary();
+};
+document.getElementById("resumeLink").onclick=()=>{
+  load();
+  if(!state.startDate) state.startDate=localISODate();
+  cur=findResumeDay(state.duration);
+  state.day=cur;
+  save();
+  showDiary();
+};
+
+/* =================== 渲染 =================== */
+function showDiary(){ document.getElementById("cover").classList.add("hidden"); document.getElementById("diary").classList.remove("hidden"); render(); }
+
+function render(){
+  setupLongImageOptions();
+  state.day=cur; save();
+  const d=cur, N=state.duration, e=getEntry(d), th=themeForDay(d);
+  document.getElementById("dayTitle").textContent=`第 ${d} 天`;
+  const tb=document.getElementById("themeBadge");
+  if(state.duration===7){
+    tb.textContent = `第 ${d} 天 · 主题 ${((d-1)%THEMES.length)+1}：${th.name}`;
+  } else if(state.duration===49){
+    tb.textContent = `第 ${Math.floor((d-1)/7)+1} 周 · 本周主题：${th.name}`;
+  } else {
+    tb.textContent = `第 ${Math.floor((d-1)/7)+1} 周主题：${th.name}`;
+  }
+  tb.classList.remove("hidden");
+  document.getElementById("dateLine").textContent=formatDayDate(d);
+  document.getElementById("traceText").textContent=th.trace;
+
+  // morning
+  document.getElementById("morningText").value=e.morning||"";
+  const chips=document.getElementById("emotionChips"); chips.innerHTML="";
+  EMOTIONS.forEach(em=>{ const b=document.createElement("button"); b.textContent=em; if((e.emotions||[]).includes(em)) b.classList.add("on"); b.onclick=()=>{ b.classList.toggle("on"); const e=getEntry(cur); e.emotions=activeEmotions(); save(); document.getElementById("morningTip").textContent="已自动保存 ✓"; }; chips.appendChild(b); });
+  renderRecap("morningRecap", e.morning, e.emotions, "今日已写下");
+
+  // evening
+  document.querySelectorAll("#statusOpts button").forEach(b=>b.classList.toggle("on", e.status===b.dataset.s));
+  document.getElementById("eveningText").value=e.evening||"";
+  const stTxt={done:"✨ 完成了",part:"🌱 部分发生",none:"🔜 还没发生（也很好）"}[e.status];
+  document.getElementById("eveningRecap").innerHTML = e.evening
+    ? `<div class="recap"><div class="head">🌙 夜晚回看 · ${stTxt||""}</div><div class="body">${escapeHtml(e.evening)}</div></div>` : "";
+
+  // review
+
+  // nav + stats
+  document.getElementById("prevBtn").disabled = d<=1;
+  document.getElementById("nextBtn").disabled = d>=N;
+  updateStats();
+  document.getElementById("morningTip").textContent="";
+  document.getElementById("eveningTip").textContent="";
+  updateAfterDayTools();
+}
+function renderRecap(id, text, emotions, head){
+  const box=document.getElementById(id);
+  if(text){
+    let html=`<div class="recap"><div class="head">✓ ${head}</div><div class="body">今天，我已经 ${escapeHtml(text)}</div>`;
+    if(emotions&&emotions.length) html+=`<div class="emo">${emotions.map(escapeHtml).join(" · ")}</div>`;
+    html+="</div>";
+    box.innerHTML=html;
+  } else box.innerHTML="";
+}
+function escapeHtml(s){ return (s||"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
+function activeEmotions(){ return [...document.querySelectorAll("#emotionChips button.on")].map(b=>b.textContent); }
+
+/* 自动保存：输入变化后立即写入本地存储 */
+function autoSaveField(id, field, tipId){
+  const el=document.getElementById(id);
+  el.addEventListener("input",()=>{
+    const e=getEntry(cur);
+    e[field]=el.value;
+    save();
+    const tip=document.getElementById(tipId);
+    if(tip) tip.textContent="已自动保存 ✓";
+  });
+}
+autoSaveField("morningText","morning","morningTip");
+autoSaveField("eveningText","evening","eveningTip");
+window.addEventListener("pagehide",()=>{ try{ save(); }catch(e){} });
+
+/* =================== 保存 =================== */
+document.getElementById("saveMorning").onclick=()=>{
+  const e=getEntry(cur); e.morning=document.getElementById("morningText").value.trim(); e.emotions=activeEmotions(); save();
+  renderRecap("morningRecap", e.morning, e.emotions, "今日已写下");
+  document.getElementById("morningTip").textContent="已保存 ✓"; toast("早晨已保存"); updateStats(); updateAfterDayTools();
+};
+document.getElementById("saveEvening").onclick=()=>{
+  const e=getEntry(cur); const sel=document.querySelector("#statusOpts button.on");
+  e.status=sel?sel.dataset.s:""; e.evening=document.getElementById("eveningText").value.trim(); save();
+  const stTxt={done:"✨ 完成了",part:"🌱 部分发生",none:"🔜 还没发生（也很好）"}[e.status];
+  document.getElementById("eveningRecap").innerHTML = e.evening ? `<div class="recap"><div class="head">🌙 夜晚回看 · ${stTxt||""}</div><div class="body">${escapeHtml(e.evening)}</div></div>` : "";
+  document.getElementById("eveningTip").textContent="已保存 ✓"; toast("夜晚已保存"); updateStats(); updateAfterDayTools();
+};
+function updateStats(){ /* 已移除进度统计，保留空函数兼容原有保存流程 */ }
+document.querySelectorAll("#statusOpts button").forEach(b=>b.onclick=()=>{
+  document.querySelectorAll("#statusOpts button").forEach(x=>x.classList.remove("on"));
+  b.classList.add("on");
+  getEntry(cur).status=b.dataset.s; save();
+  document.getElementById("eveningTip").textContent="已自动保存 ✓"; updateAfterDayTools();
+});
+window.addEventListener("pagehide",()=>{ try{ save(); }catch(e){} });
+document.getElementById("prevBtn").onclick=()=>{ if(cur>1){cur--;render();} };
+document.getElementById("nextBtn").onclick=()=>{ if(cur<state.duration){cur++;render();} };
+
+/* =================== 目录 =================== */
+const sheet=document.getElementById("sheet"), overlay=document.getElementById("overlay");
+function openMenu(){
+  const g=document.getElementById("dayGrid"); g.innerHTML="";
+  for(let i=1;i<=state.duration;i++){
+    const b=document.createElement("button"); const e=state.entries[i];
+    b.textContent=i; if(e&&e.morning) b.classList.add("done"); if(i===cur) b.classList.add("today");
+    if(e&&e.morning){ const dot=document.createElement("span"); dot.className="dot"; b.appendChild(dot); }
+    b.onclick=()=>{ cur=i; render(); closeMenu(); }; g.appendChild(b);
+  }
+  sheet.classList.add("show"); overlay.classList.add("show");
+}
+function closeMenu(){ sheet.classList.remove("show"); overlay.classList.remove("show"); }
+document.getElementById("menuBtn").onclick=openMenu; overlay.onclick=closeMenu;
+
+/* 复盘入口只在当天完成夜晚记录后出现；不在主页面堆叠功能 */
+function updateAfterDayTools(){
+  const area=document.getElementById("afterDayTools");
+  if(area) area.classList.remove("hidden");
+  const extras=document.getElementById("weekExtras");
+  if(extras) extras.style.display="block";
+  const title=document.getElementById("exportTitle");
+  const desc=document.getElementById("exportDesc");
+  const main=document.getElementById("weekLongImageBtn");
+  const options=document.getElementById("longImageOptions");
+  const hint=document.getElementById("longImageHint");
+  const long=state.duration!==7;
+  if(title) title.textContent=state.duration===7?"把这7天，整理成一份日记":state.duration===49?"选择一段周期，保存走过的路":"选择一段周期，保存这一年的记录";
+  if(desc) desc.textContent=state.duration===7?"完成并保存第7天的日记后，可生成七天完整分享长图。":"49天可按周选择记录，365天可按阶段选择记录，随时导出分享长图；完成整个周期后，另有纪念卡奖励。";
+  if(main) main.style.display=(!long && cur===7 && getEntry(7).status==="done")?"block":"none";
+  const sevenCard=document.getElementById("sevenDayCardBtn");
+  if(sevenCard) sevenCard.style.display=(!long && cur===7 && getEntry(7).status==="done")?"block":"none";
+  if(options) options.style.display=long?"flex":"none";
+  if(hint){ hint.style.display=long?"block":"none"; if(long) hint.textContent=isFullCycleCompleted()?"恭喜完成整个周期！已解锁专属纪念卡。你也可以继续导出任意一段周期。完整文字备份随时可用。":"可自行选择周期导出分享长图；完成全部日期的日记任务后，才会解锁专属纪念卡。完整文字备份随时可用。"; }
+  if(long) setupLongImageOptions();
+}
+/* =================== 今日回顾 / 主题回顾 / 分享卡片 =================== */
+function syncCurrentFields(){
+  const e=getEntry(cur);
+  e.morning=document.getElementById("morningText").value;
+  e.emotions=activeEmotions();
+  const sel=document.querySelector("#statusOpts button.on");
+  e.status=sel?sel.dataset.s:(e.status||"");
+  e.evening=document.getElementById("eveningText").value;
+  save();
+  return e;
+}
+function safeText(s){return escapeHtml((s||"").trim())||"（还没有记录）";}
+function openReflection(title,html,shareText){
+  document.getElementById("reflectionTitle").textContent=title;
+  document.getElementById("reflectionContent").innerHTML=html;
+  const panel=document.getElementById("reflectionPanel");
+  panel.classList.remove("hidden");
+  panel.dataset.shareText=shareText||"";
+  document.getElementById("downloadShareCard").style.display="none";
+  panel.scrollIntoView({behavior:"smooth",block:"nearest"});
+}
+document.getElementById("closeReflection").onclick=()=>document.getElementById("reflectionPanel").classList.add("hidden");
+document.getElementById("weekReviewBtn").onclick=()=>{
+  syncCurrentFields();
+  const theme=themeForDay(cur);
+  const themeWeek=Math.floor((cur-1)/7)+1;
+  const themeStart=(themeWeek-1)*7+1;
+  const themeEnd=Math.min(themeWeek*7,state.duration);
+  const days=[];
+  for(let d=themeStart;d<=themeEnd;d++){
+    if(themeForDay(d).name===theme.name){
+      const e=state.entries[d];
+      if(e&&(e.morning||e.evening)) days.push({day:d,e});
+    }
+  }
+  const done=days.filter(x=>x.e.status==="done").length;
+  let html=`<p>第 ${themeWeek} 周 · 第 ${themeStart}–${themeEnd} 天</p><p>主题：<b>${escapeHtml(theme.name)}</b></p><p>${escapeHtml(theme.trace)}</p>
+    <p>这一周你留下了 <b>${days.length}</b> 天记录，其中 <b>${done}</b> 天标记为「完成了」。</p>`;
+  if(!days.length) html+="<p>写下这个主题的日记后，就能在这里回看自己的记录。</p>";
+  else html+=days.map(({day,e})=>`<div style="border-top:1px solid var(--line);padding:10px 0;"><b>第 ${day} 天</b><p>☀ ${safeText(e.morning)}</p><p>🌙 ${safeText(e.evening)}</p><small>${e.status==="done"?"✨ 完成了":e.status==="none"?"🌱 还没完成":""}</small></div>`).join("");
+  const share=`我的主题回顾 · 第${themeWeek}周 · ${theme.name}\n${theme.trace}\n记录 ${days.length} 天 · 完成 ${done} 天\n`+days.map(({day,e})=>`第${day}天：${e.morning||"未填写"}${e.evening?"；回看："+e.evening:""}`).join("\n");
+  openReflection("📖 第 "+themeWeek+" 周 · "+theme.name,html,share);
+};
+document.getElementById("shareCardBtn").onclick=()=>{
+  const e=syncCurrentFields();
+  const status={done:"完成了",part:"部分发生",none:"还没发生"}[e.status]||"正在记录";
+  const text=`3 分钟未来日记\n第 ${cur} 天\n\n今天，我已经${e.morning||"写下一个美好的期待"}\n\n夜晚回看\n${e.evening||status}\n\n${(e.emotions||[]).join(" · ")}\n\n写下今天，明天就会来。`;
+  openReflection("✦ 分享卡片预览",`<div style="background:linear-gradient(145deg,#f7efe2,#fffaf2);border-radius:16px;padding:22px;color:#554637;"><div style="font-size:12px;letter-spacing:2px;color:#9a7957;">3 MINUTE FUTURE DIARY</div><h2 style="margin:12px 0;">第 ${cur} 天</h2><p>今天，我已经${safeText(e.morning)}</p><hr style="border:0;border-top:1px solid #ddcdb8;margin:18px 0;"><b>🌙 夜晚回看</b><p>${safeText(e.evening)}</p><p style="color:#9a7957;">${e.emotions&&e.emotions.length?e.emotions.map(escapeHtml).join(" · "):"写下今天，明天就会来。"}</p></div>`,text);
+  document.getElementById("downloadShareCard").style.display="block";
+};
+function renderWeekTrail(){ /* 进度装饰已移除，避免重复标签干扰阅读 */ }
+function wrapCanvasText(ctx,text,maxWidth,font){
+  ctx.font=font;
+  const lines=[]; let line="";
+  for(const ch of [...String(text||"")]){
+    if(ctx.measureText(line+ch).width>maxWidth && line){ lines.push(line); line=ch; }
+    else line+=ch;
+  }
+  if(line || !lines.length) lines.push(line);
+  return lines;
+}
+function downloadDiaryImage(startDay,endDay,title,mode="detail"){
+  const total=state.duration, overview=mode==="overview";
+  const groupSize=total===49?7:30;
+  const groups=[];
+  if(overview){
+    for(let d=startDay;d<=endDay;d+=groupSize) groups.push({d,end:Math.min(endDay,d+groupSize-1)});
+  } else {
+    for(let d=startDay;d<=endDay;d++) groups.push({d,end:d});
+  }
+  const W=1200, left=52, cardX=42, cardW=1116, textX=82, maxTextW=1036;
+  const top=overview?330:430, bottom=100, gap=overview?18:28;
+  const measure=document.createElement("canvas").getContext("2d");
+  const bodyFont="28px serif", lineH=42;
+  const statusText={done:"完成了",part:"部分发生",none:"还没发生，也没关系"};
+  const statusMark={done:"✓",part:"～",none:"○"};
+  const cards=groups.map(({d,end})=>{
+    if(overview){
+      let recordDays=0, done=0, part=0, snippets=[];
+      for(let n=d;n<=end;n++){
+        const e=state.entries[n]||{};
+        if((e.morning||"").trim()||(e.evening||"").trim()) recordDays++;
+        if(e.status==="done") done++; if(e.status==="part") part++;
+        if((e.morning||"").trim() && snippets.length<2) snippets.push(e.morning.trim());
+      }
+      const lines=wrapCanvasText(measure,snippets.length?snippets.join(" · "):"这一段还没有记录，留待未来慢慢写下。",maxTextW,"25px serif").slice(0,3);
+      return {d,end,recordDays,done,part,lines,h:128+lines.length*36};
+    }
+    const e=state.entries[d]||{};
+    const morning=e.morning?.trim()?`今天，我已经${e.morning.trim()}`:"今天还没有写下期待。";
+    const evening=e.evening?.trim()?e.evening.trim():"夜晚还没有留下记录。";
+    const morningLines=wrapCanvasText(measure,morning,maxTextW,bodyFont);
+    const eveningLines=wrapCanvasText(measure,evening,maxTextW,bodyFont);
+    const emotionLines=(e.emotions||[]).length?wrapCanvasText(measure,(e.emotions||[]).join(" · "),maxTextW,"23px serif"):[];
+    const h=330+morningLines.length*lineH+eveningLines.length*lineH+(emotionLines.length?emotionLines.length*32:0);
+    return {d,end,e,morningLines,eveningLines,emotionLines,h};
+  });
+  const canvasHeight=top+cards.reduce((sum,c)=>sum+c.h,0)+gap*Math.max(0,cards.length-1)+bottom;
+  // Safety guard avoids silent browser canvas clipping for unexpected long entries.
+  if(canvasHeight>30000){ toast("这段内容太长，请缩小导出分段后再保存"); return; }
+  const canvas=document.createElement("canvas"); canvas.width=W; canvas.height=canvasHeight;
+  const c=canvas.getContext("2d");
+  if(!c){toast("当前浏览器不能生成图片，请尝试最新版浏览器");return;}
+  const bg=c.createLinearGradient(0,0,W,canvasHeight); bg.addColorStop(0,"#f7efe2"); bg.addColorStop(1,"#fbf6ec"); c.fillStyle=bg; c.fillRect(0,0,W,canvasHeight);
+  c.fillStyle="#b49a64"; c.font="23px serif"; c.textAlign="center"; c.fillText(`3分钟未来日记   ·   ${total} 天`,W/2,72);
+  c.fillStyle="#2b2620"; c.font="bold 46px serif"; c.fillText("我的未来日记",W/2,132);
+  c.fillStyle="#9a8d7b"; c.font="22px serif"; c.fillText(dateRange(startDay,endDay),W/2,177);
+  const written=Array.from({length:endDay-startDay+1},(_,i)=>state.entries[startDay+i]||{}).filter(e=>(e.morning||"").trim()||(e.evening||"").trim()).length;
+  const done=Array.from({length:endDay-startDay+1},(_,i)=>state.entries[startDay+i]||{}).filter(e=>e.status==="done").length;
+  const part=Array.from({length:endDay-startDay+1},(_,i)=>state.entries[startDay+i]||{}).filter(e=>e.status==="part").length;
+  const statsY=214, statsH=98;
+  c.fillStyle="#fffdf8"; c.beginPath(); c.roundRect(left,statsY,W-left*2,statsH,22); c.fill();
+  const statXs=[W*.25,W*.5,W*.75];
+  const vals=[String(written),String(done),String(part)]; const labs=["天有记录","天完成了","天有进展"];
+  for(let i=0;i<3;i++){
+    c.fillStyle="#a47d25"; c.font="bold 35px serif"; c.fillText(vals[i],statXs[i],statsY+42);
+    c.fillStyle="#b1a594"; c.font="18px serif"; c.fillText(labs[i],statXs[i],statsY+73);
+  }
+  let y=top;
+  for(const card of cards){
+    c.fillStyle="#fffdf9"; c.strokeStyle="#f0e7d9"; c.lineWidth=1.4;
+    c.beginPath(); c.roundRect(cardX,y,cardW,card.h,25); c.fill(); c.stroke();
+    if(overview){
+      const head=total===49?`第 ${Math.ceil(card.d/7)} 周　·　${themeForDay(card.d).name}　·　第 ${card.d}–${card.end} 天`:`阶段 ${String(Math.ceil(card.d/30)).padStart(2,"0")}　·　第 ${card.d}–${card.end} 天`;
+      c.textAlign="left"; c.fillStyle="#9a7957"; c.font="bold 26px serif"; c.fillText(head,textX,y+43);
+      c.fillStyle="#5c5347"; c.font="22px serif"; c.fillText(`有记录 ${card.recordDays} 天　　完成 ${card.done} 天　　部分发生 ${card.part} 天`,textX,y+79);
+      c.fillStyle="#62584b"; c.font="23px serif"; let yy=y+117;
+      card.lines.forEach(line=>{c.fillText(line,textX,yy);yy+=35;});
+    } else {
+      const e=card.e; const date=formatDayDate(card.d); const theme=themeForDay(card.d);
+      c.textAlign="left"; c.fillStyle="#b2a796"; c.font="20px serif"; c.fillText(date,textX,y+42);
+      c.fillStyle="#2b2620"; c.font="bold 30px serif"; c.fillText(`第 ${card.d} 天 · ${theme.name}`,textX,y+88);
+      const stamp=e.status==="done"?"成":"";
+      if(stamp){
+        c.strokeStyle="#d95f48";c.lineWidth=2.6;c.beginPath();c.arc(W-112,y+65,31,0,Math.PI*2);c.stroke();
+        c.fillStyle="#c8513b";c.textAlign="center";c.font="bold 24px serif";c.fillText(stamp,W-112,y+73);
+      }
+      let yy=y+140;
+      c.textAlign="left";c.fillStyle="#b18a30";c.font="bold 22px serif";c.fillText("晨间期待",textX,yy); yy+=43;
+      c.fillStyle="#29241f";c.font=bodyFont;
+      card.morningLines.forEach(line=>{c.fillText(line,textX,yy);yy+=lineH;});
+      yy+=12;c.strokeStyle="#e9dfcf";c.lineWidth=1.3;c.setLineDash([3,5]);c.beginPath();c.moveTo(textX,yy);c.lineTo(W-textX,yy);c.stroke();c.setLineDash([]);yy+=38;
+      c.fillStyle="#b18a30";c.font="bold 22px serif";c.fillText(`夜晚回看　·　${statusText[e.status]||"继续记录"}`,textX,yy);yy+=43;
+      c.fillStyle="#29241f";c.font=bodyFont;
+      card.eveningLines.forEach(line=>{c.fillText(line,textX,yy);yy+=lineH;});
+      if(card.emotionLines.length){ yy+=8;c.fillStyle="#95836a";c.font="23px serif";card.emotionLines.forEach(line=>{c.fillText(line,textX,yy);yy+=32;}); }
+    }
+    y+=card.h+gap;
+  }
+  c.textAlign="center";c.fillStyle="#a99a83";c.font="20px serif";c.fillText("完成一天，盖下一枚小印章。允许断续，每一天都算数。",W/2,canvasHeight-42);
+  try{
+    canvas.toBlob(blob=>{
+      if(!blob){toast("图片生成失败，请减少内容后重试");return;}
+      const url=URL.createObjectURL(blob); const a=document.createElement("a");
+      const suffix=overview?"周期概览":`第${startDay}-${endDay}天完整记录`;
+      a.download=`3分钟未来日记-${total}天-${suffix}.png`;a.href=url;a.click();
+      setTimeout(()=>URL.revokeObjectURL(url),1500);
+      toast(overview?"周期概览已导出":"完整日记图片已导出");
+    },"image/png");
+  }catch(err){toast("图片生成失败，建议减少本次导出天数");}
+}
+function isFullCycleCompleted(){
+  return Array.from({length:state.duration},(_,i)=>state.entries[i+1]||{}).every(e=>e.status==="done");
+}
+function setupLongImageOptions(){
+  const options=document.getElementById("longImageOptions"), hint=document.getElementById("longImageHint");
+  const mainButton=document.getElementById("weekLongImageBtn");
+  const long=state.duration!==7;
+  if(mainButton) mainButton.style.display=(!long && cur===7 && getEntry(7).status==="done")?"block":"none";
+  const sevenCard=document.getElementById("sevenDayCardBtn"); if(sevenCard) sevenCard.style.display=(!long && cur===7 && getEntry(7).status==="done")?"block":"none";
+  if(options) options.style.display=long?"flex":"none";
+  if(hint){ hint.style.display=long?"block":"none"; if(long) hint.textContent=isFullCycleCompleted()?"恭喜完成整个周期！已解锁专属纪念卡。你也可以继续导出任意一段周期。完整文字备份随时可用。":"可自行选择周期导出分享长图；完成全部日期的日记任务后，解锁周期纪念卡。完整文字备份随时可用。"; }
+  if(long){
+    const sel=document.getElementById("periodSelect");
+    if(sel){ const old=sel.value; const size=state.duration===49?7:30; const opts=[]; for(let a=1;a<=state.duration;a+=size){const b=Math.min(state.duration,a+size-1);opts.push({a,b,label:`第 ${a}—${b} 天`});} sel.innerHTML=opts.map(o=>`<option value="${o.a},${o.b}">${o.label}</option>`).join(""); if([...sel.options].some(o=>o.value===old)) sel.value=old; }
+    const reward=document.getElementById("overviewImageBtn"); if(reward){reward.textContent=isFullCycleCompleted()?"生成周期纪念卡（已解锁）":"周期纪念卡（完成全部天数后解锁）"; reward.style.opacity=isFullCycleCompleted()?"1":".65";}
+  }
+}
+document.getElementById("periodImageBtn").onclick=()=>{
+  syncCurrentFields(); const sel=document.getElementById("periodSelect"); if(!sel||!sel.value)return;
+  const [a,b]=sel.value.split(",").map(Number); downloadDiaryImage(a,b,`我的未来日记第${a}-${b}天` ,"detail");
+};
+document.getElementById("weekLongImageBtn").onclick=()=>{
+  syncCurrentFields();
+  if(state.duration===7 && cur===7 && getEntry(7).status==="done") downloadDiaryImage(1,7,"我的未来日记","detail");
+  else toast("完成第7天后即可生成七天完整分享长图");
+};
+function downloadPeriodShareCard(){
+  syncCurrentFields();
+  if(!isFullCycleCompleted()){ toast("完成全部日期的日记任务后，即可解锁周期纪念分享卡"); return; }
+  const total=state.duration;
+  const all=Array.from({length:total},(_,i)=>state.entries[i+1]||{});
+  const recorded=all.filter(e=>(e.morning||"").trim()||(e.evening||"").trim()).length;
+  const done=all.filter(e=>e.status==="done").length;
+  const part=all.filter(e=>e.status==="part").length;
+  const emotions={};
+  all.forEach(e=>(e.emotions||[]).forEach(v=>emotions[v]=(emotions[v]||0)+1));
+  const topEmotions=Object.entries(emotions).sort((a,b)=>b[1]-a[1]).slice(0,3).map(x=>x[0]);
+  const canvas=document.createElement("canvas");
+  canvas.width=1080; canvas.height=1350;
+  const c=canvas.getContext("2d");
+  const g=c.createLinearGradient(0,0,1080,1350);
+  g.addColorStop(0,"#f2e4cc");g.addColorStop(.55,"#fffaf1");g.addColorStop(1,"#eadcc4");
+  c.fillStyle=g;c.fillRect(0,0,1080,1350);
+  // soft decorative border and corner ornaments
+  c.strokeStyle="#d9bd83";c.lineWidth=3;c.beginPath();c.roundRect(34,34,1012,1282,34);c.stroke();
+  c.strokeStyle="#e7d6b6";c.lineWidth=1.5;c.beginPath();c.roundRect(51,51,978,1248,27);c.stroke();
+  c.fillStyle="#a7854e";c.textAlign="center";c.font="28px serif";c.fillText("3 分 钟 未 来 日 记",540,140);
+  c.fillStyle="#4b3d2d";c.font="bold 58px serif";c.fillText(total===49?"恭喜你，走过了 49 天":"恭喜你，走过了 365 天",540,238);
+  c.fillStyle="#a18b6b";c.font="27px serif";c.fillText(total===49?"七周坚持，值得好好纪念":"一整年的认真，值得被自己看见",540,294);
+  // central emblem
+  c.fillStyle="#f7edda";c.strokeStyle="#d8bd82";c.lineWidth=2;c.beginPath();c.arc(540,420,76,0,Math.PI*2);c.fill();c.stroke();
+  c.fillStyle="#a7854e";c.font="64px serif";c.fillText(total===49?"✦":"❋",540,443);
+  const statY=565, boxes=[{n:String(total),label:"天的旅程"},{n:String(recorded),label:"天留下记录"},{n:String(done),label:"天完成期待"}];
+  boxes.forEach((b,i)=>{
+    const x=108+i*292;
+    c.fillStyle="#fffdf8";c.beginPath();c.roundRect(x,statY,280,152,24);c.fill();
+    c.fillStyle="#a7854e";c.font="bold 54px serif";c.fillText(b.n,x+140,statY+70);
+    c.fillStyle="#86745b";c.font="23px serif";c.fillText(b.label,x+140,statY+116);
+  });
+  c.fillStyle="#4b3d2d";c.font="30px serif";c.fillText("这段时间，我正在练习……",540,810);
+  c.fillStyle="#86745b";c.font="25px serif";
+  const lines=topEmotions.length?topEmotions.join("　·　"):"认真期待，也认真生活";
+  c.fillText(lines,540,866);
+  c.strokeStyle="#ddcaa7";c.lineWidth=2;c.beginPath();c.moveTo(180,930);c.lineTo(900,930);c.stroke();
+  c.fillStyle="#6b5943";c.font="28px serif";
+  if(total===49){
+    c.fillText("恭喜你，完成了 49 天的未来日记。",540,990);
+    c.font="25px serif";c.fillText("这七周里，你一次次停下来，认真听见自己。",540,1040);
+    c.fillText("愿这些小小的发现，陪你继续走向想要的生活。",540,1084);
+  }else{
+    c.fillText("恭喜你，完成了 365 天的未来日记。",540,978);
+    c.font="24px serif";
+    c.fillText("这一年里，有闪闪发光的日子，也有并不容易的时刻。",540,1022);
+    c.fillText("而你一次次停下来，写下期待、感受与反思，",540,1064);
+    c.fillText("也一次次把生活的主动权，温柔地交还给自己。",540,1106);
+    c.fillText("愿未来的你，仍记得这份认真，也继续相信自己。",540,1148);
+  }
+  c.fillStyle="#a7854e";c.font="24px serif";c.fillText("下一段日子，也继续为自己留三分钟。",540,total===49?1148:1200);
+  c.fillStyle="#a18b6b";c.font="20px serif";c.fillText("3分钟未来日记 · 周期纪念卡",540,1218);
+  c.textAlign="start";
+  try{
+    const a=document.createElement("a");a.download=`3分钟未来日记-${total}天-周期完成分享卡.png`;
+    a.href=canvas.toDataURL("image/png");a.click();toast("周期分享卡已生成");
+  }catch(e){toast("图片生成失败，请使用最新版浏览器再试");}
+}
+document.getElementById("overviewImageBtn").onclick=downloadPeriodShareCard;
+function downloadSevenDayMemorialCard(){
+  syncCurrentFields();
+  if(state.duration!==7 || cur!==7 || getEntry(7).status!=="done") { toast("完成并保存第7天后，即可生成7天纪念卡"); return; }
+  const canvas=document.createElement("canvas"); canvas.width=1080; canvas.height=1350;
+  const c=canvas.getContext("2d");
+  const g=c.createLinearGradient(0,0,1080,1350); g.addColorStop(0,"#f5ead8"); g.addColorStop(.55,"#fffaf1"); g.addColorStop(1,"#e9dbc3");
+  c.fillStyle=g; c.fillRect(0,0,1080,1350);
+  c.strokeStyle="#d9bd83"; c.lineWidth=3; c.beginPath(); c.roundRect(34,34,1012,1282,34); c.stroke();
+  c.strokeStyle="#e7d6b6"; c.lineWidth=1.5; c.beginPath(); c.roundRect(51,51,978,1248,27); c.stroke();
+  c.textAlign="center"; c.fillStyle="#a7854e"; c.font="28px serif"; c.fillText("3 分 钟 未 来 日 记",540,145);
+  c.fillStyle="#4b3d2d"; c.font="bold 58px serif"; c.fillText("恭喜你，完成了 7 天的未来日记！",540,330);
+  c.fillStyle="#a18b6b"; c.font="29px serif"; c.fillText("七天的开始，值得好好纪念",540,395);
+  c.fillStyle="#f7edda"; c.strokeStyle="#d8bd82"; c.lineWidth=2; c.beginPath(); c.arc(540,570,82,0,Math.PI*2); c.fill(); c.stroke();
+  c.fillStyle="#a7854e"; c.font="70px serif"; c.fillText("✦",540,594);
+  c.fillStyle="#6b5943"; c.font="34px serif"; c.fillText("你已经为自己留出了七天的时间。",540,770);
+  c.font="31px serif"; c.fillText("愿这份小小的坚持，成为美好生活的开始。",540,835);
+  c.strokeStyle="#ddcaa7"; c.lineWidth=2; c.beginPath(); c.moveTo(210,920); c.lineTo(870,920); c.stroke();
+  c.fillStyle="#a7854e"; c.font="25px serif"; c.fillText("下一段日子，也继续为自己留三分钟。",540,1000);
+  c.fillStyle="#a18b6b"; c.font="22px serif"; c.fillText("7 天完成纪念卡",540,1210); c.fillText("3分钟未来日记",540,1250);
+  try{ const a=document.createElement("a"); a.download="3分钟未来日记-7天完成纪念卡.png"; a.href=canvas.toDataURL("image/png"); a.click(); toast("7天纪念卡已生成"); }
+  catch(e){ toast("图片生成失败，请使用最新版浏览器再试"); }
+}
+document.getElementById("sevenDayCardBtn").onclick=downloadSevenDayMemorialCard;
+
+document.getElementById("downloadShareCard").onclick=()=>{
+  const panel=document.getElementById("reflectionPanel");
+  const text=panel.dataset.shareText||"3分钟未来日记";
+  const canvas=document.createElement("canvas");canvas.width=1080;canvas.height=1350;
+  const c=canvas.getContext("2d");
+  const g=c.createLinearGradient(0,0,1080,1350);g.addColorStop(0,"#f5ead9");g.addColorStop(1,"#fffaf2");c.fillStyle=g;c.fillRect(0,0,1080,1350);
+  c.fillStyle="#9a7957";c.font="28px sans-serif";c.fillText("3 MINUTE FUTURE DIARY",90,110);
+  c.fillStyle="#554637";c.font="bold 54px sans-serif";c.fillText(panel.querySelector("h3").textContent,90,205);
+  c.strokeStyle="#ddcdb8";c.lineWidth=2;c.beginPath();c.moveTo(90,245);c.lineTo(990,245);c.stroke();
+  c.fillStyle="#554637";c.font="34px sans-serif";
+  const lines=text.split("\n");let y=320;
+  for(const line of lines){
+    if(y>1150)break;
+    const chars=[...line];let part="";
+    for(const ch of chars){if(c.measureText(part+ch).width>880){c.fillText(part,90,y);y+=54;part=ch;}else part+=ch;}
+    c.fillText(part,90,y);y+=54;
+  }
+  c.fillStyle="#9a7957";c.font="24px sans-serif";c.fillText("写下今天，明天就会来。",90,1260);
+  const a=document.createElement("a");a.download=`未来日记分享卡_第${cur}天.png`;a.href=canvas.toDataURL("image/png");a.click();toast("分享卡片已下载");
+};
+
+/* =================== 导出 / 重置 =================== */
+document.getElementById("exportBtn").onclick=()=>{
+  syncCurrentFields();
+  let out=`《3分钟未来日记》完整备份\n周期：${state.duration} 天\n记录起始日：${state.startDate||localISODate()}\n导出时间：${fmtDate()}\n${"=".repeat(30)}\n\n`;
+  let count=0;
+  for(let i=1;i<=state.duration;i++){
+    const e=state.entries[i] || {morning:"",emotions:[],status:"",evening:"",review:""};
+    count++; const th=themeForDay(i);
+    const statusTxt={done:"完成了",part:"部分发生",none:"还没发生，也没关系"}[e.status]||"未选择";
+    out+=`【${formatDayDate(i)} · 第 ${i} 天 · ${th.name}】\n`;
+    if((e.morning||"").trim()) out+=`晨间期待：今天，我已经${e.morning.trim()}\n`;
+    if(e.emotions&&e.emotions.length) out+=`感受：${e.emotions.join("、")}\n`;
+    if(e.status) out+=`状态：${statusTxt}\n`;
+    if((e.evening||"").trim()) out+=`夜晚回看：${e.evening.trim()}\n`;
+    if((e.review||"").trim()) out+=`复盘：${e.review.trim()}\n`;
+    out+="\n";
+  }
+  if(!count) out+="目前还没有日记记录。期待你写下第一天。\n";
+  const blob=new Blob(["\ufeff",out],{type:"text/plain;charset=utf-8"});
+  const url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;
+  a.download=`3分钟未来日记-${state.duration}天-文字备份.txt`;a.click();setTimeout(()=>URL.revokeObjectURL(url),1500);
+  toast(count?`已导出 ${count} 天记录`:"已导出空白备份文件");
+};
+document.getElementById("backCover").onclick=()=>{ document.getElementById("diary").classList.add("hidden"); document.getElementById("cover").classList.remove("hidden"); buildCover(); };
+
+/* =================== 启动 =================== */
+load(); buildCover(); updateAfterDayTools();
+if (state.entries[cur] && state.entries[cur].status) {
+  document.getElementById("afterDayTools").classList.remove("hidden");
+}
+</script>
+</body>
+</html>
