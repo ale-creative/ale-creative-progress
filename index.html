@@ -13,6 +13,7 @@
 <section class="card"><h2>今天想做什么？</h2><label for="date">日期</label><input id="date" type="date"><label for="category">创作类别</label><select id="category"><option>表情包创作</option><option>公众号写作</option><option>音乐与灵感</option><option>学习与成长</option><option>生活记录</option></select><label for="taskInput">准备完成的事情</label><input id="taskInput" placeholder="例如：完成一张表情包"><button id="add" style="width:100%;margin-top:12px">＋ 添加任务</button></section>
 <section class="card"><h2>今日进度</h2><div class="stats"><div class="stat"><strong id="total">0</strong><small>总任务</small></div><div class="stat"><strong id="completed">0</strong><small>已完成</small></div><div class="stat"><strong id="percent">0%</strong><small>完成率</small></div></div><div class="progress"><div id="bar"></div></div><div id="tasks"></div><p id="empty" class="muted">今天的第一件事，可以从这里开始。</p></section>
 <section class="card"><h2>今天的感受</h2><label for="mood">此刻的状态</label><select id="mood"><option>状态不错</option><option>平平常常</option><option>有点疲惫</option><option>暂时不想努力</option><option>有新的灵感</option></select><label for="note">留给自己的几句话</label><textarea id="note" rows="4" placeholder="今天做了什么？有什么想法？"></textarea><p class="muted">记录自动保存在当前浏览器；建议定期下载备份。</p></section>
+<section class="card"><h2>生成分享图片</h2><p class="muted">把今天的创作进度和感受生成一张图片，方便保存或发朋友圈。</p><button id="makeImage" style="width:100%">生成报喜卡图片</button><p class="muted">生成后可预览并下载 PNG 图片。</p><div id="imagePreview" style="display:none;margin-top:12px"><img id="shareImage" alt="创作报喜卡预览" style="width:100%;border-radius:12px;border:1px solid #e7e1d8"><button id="downloadImage" style="width:100%;margin-top:10px">下载图片</button></div></section>
 <section class="card"><h2>备份与恢复</h2><p class="muted">换设备前，建议先下载备份文件。</p><div class="row"><button id="export">下载备份</button><button id="importBtn" class="secondary">导入备份</button></div><input id="file" type="file" accept=".json,application/json" hidden></section>
 <footer>阿乐的生活札记 · 慢慢创作，持续记录</footer>
 </main>
@@ -26,5 +27,37 @@ load();$('date').value=new Date().toLocaleDateString('sv-SE');$('mood').value=da
 $('add').onclick=()=>{const text=$('taskInput').value.trim();if(!text){alert('先写下一件准备做的事吧！');return}data.tasks.push({text,category:$('category').value,done:false});$('taskInput').value='';save();render()};
 $('mood').onchange=refresh;$('note').oninput=save;
 $('export').onclick=()=>{save();const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='阿乐创作进度备份.json';a.click();URL.revokeObjectURL(url)};
+
+function makeShareImage(){
+ save();
+ const canvas=document.createElement('canvas'),ctx=canvas.getContext('2d');
+ canvas.width=1080;canvas.height=1350;
+ const bg=ctx.createLinearGradient(0,0,1080,1350);bg.addColorStop(0,'#f8f4e8');bg.addColorStop(1,'#f3f0df');ctx.fillStyle=bg;ctx.fillRect(0,0,1080,1350);
+ ctx.fillStyle='#dfe8d2';ctx.beginPath();ctx.roundRect(64,64,952,1222,30);ctx.fill();
+ ctx.fillStyle='#f9f7ee';ctx.beginPath();ctx.roundRect(82,82,916,1186,24);ctx.fill();
+ ctx.fillStyle='#72876b';ctx.font='30px system-ui,sans-serif';ctx.fillText('阿乐的创作小记',112,150);
+ ctx.fillStyle='#244f3d';ctx.font='bold 58px system-ui,sans-serif';ctx.fillText('阿乐的表达报喜卡',112,242);
+ ctx.fillStyle='#72876b';ctx.font='30px system-ui,sans-serif';ctx.fillText($('date').value||new Date().toLocaleDateString('zh-CN'),112,300);
+ ctx.fillStyle='#e2ebd6';ctx.beginPath();ctx.roundRect(112,344,856,94,18);ctx.fill();
+ ctx.fillStyle='#285640';ctx.font='bold 34px system-ui,sans-serif';ctx.fillText('本次发布 · '+$('category').value,140,404);
+ const total=data.tasks.length,done=data.tasks.filter(t=>t.done).length,pct=total?Math.round(done/total*100):0;
+ ctx.fillStyle='#72876b';ctx.font='30px system-ui,sans-serif';ctx.fillText('今日任务',112,510);ctx.fillText('已完成',570,510);
+ ctx.fillStyle='#244f3d';ctx.font='bold 76px system-ui,sans-serif';ctx.fillText(String(total)+' 条',112,600);ctx.fillText(String(done)+' 条',570,600);
+ ctx.fillStyle='#e2e8d8';ctx.beginPath();ctx.roundRect(112,640,856,22,12);ctx.fill();
+ ctx.fillStyle='#789b62';ctx.beginPath();ctx.roundRect(112,640,856*pct/100,22,12);ctx.fill();
+ ctx.fillStyle='#72876b';ctx.font='28px system-ui,sans-serif';ctx.fillText('完成率 '+pct+'%',112,704);
+ ctx.fillStyle='#244f3d';ctx.font='bold 34px system-ui,sans-serif';ctx.fillText('这次表达，我的感受是：',112,790);
+ ctx.fillStyle='#365c49';ctx.font='30px system-ui,sans-serif';
+ const note=($('note').value||'今天也为自己留下一点记录。').trim();
+ const lines=[];let line='';
+ for(const ch of note){if(ctx.measureText(line+ch).width>820){lines.push(line);line=ch;}else line+=ch;}if(line)lines.push(line);
+ lines.slice(0,7).forEach((ln,i)=>ctx.fillText(ln,112,850+i*48));
+ ctx.strokeStyle='#d7e1ce';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(112,1170);ctx.lineTo(968,1170);ctx.stroke();
+ ctx.fillStyle='#72876b';ctx.font='26px system-ui,sans-serif';ctx.fillText('先留下一点进展，下一步可以慢慢来。',112,1220);
+ const img=$('shareImage');img.src=canvas.toDataURL('image/png');$('imagePreview').style.display='block';window.shareCardDataUrl=img.src;
+}
+$('makeImage').onclick=makeShareImage;
+$('downloadImage').onclick=()=>{if(!window.shareCardDataUrl){makeShareImage();}const a=document.createElement('a');a.href=window.shareCardDataUrl;a.download='阿乐的表达报喜卡.png';document.body.appendChild(a);a.click();a.remove()};
+
 $('importBtn').onclick=()=>$('file').click();$('file').onchange=async e=>{const f=e.target.files[0];if(!f)return;try{const d=JSON.parse(await f.text());if(!Array.isArray(d.tasks))throw Error();if(!confirm('导入会替换当前记录，确定继续吗？'))return;data=d;$('mood').value=data.mood||'状态不错';$('note').value=data.note||'';save();render();alert('恢复成功！')}catch(err){alert('文件格式不正确，请选择之前下载的备份文件。')}e.target.value=''};render();
 </script></body></html>
