@@ -438,15 +438,23 @@ function buildCover(){
   });
   document.getElementById("coverSub").textContent = (state.duration===7 ? "3分钟未来日记 · 7天体验" : state.duration===49 ? "3分钟未来日记 · 49天进阶" : "3分钟未来日记 · 365天持续记录");
 }
+function hasDayContent(e){
+  return !!((e.morning||"").trim() || (e.evening||"").trim() ||
+    (e.review||"").trim() || (e.status||"") || (e.emotions||[]).length);
+}
 function findResumeDay(duration=state.duration){
-  // 先找第一天尚未完成的日记：无内容或状态不是“完成了”都视为待继续。
-  // 如果该天已有部分内容，进入后可接着编辑；不会因为保存过就跳过。
+  // 自动续写时，跳过已有保存内容的日期，进入第一天空白日记。
   for(let d=1; d<=duration; d++){
-    const e=state.entries[d] || {};
-    if(e.completed !== true && e.status !== "done") return d;
+    if(!hasDayContent(state.entries[d] || {})) return d;
   }
-  // 整个周期都完成时，停在最后一天，方便回看并测试纪念卡。
+  // 整个周期都已有内容时，停在最后一天供回看。
   return duration;
+}
+function findNextEmptyDay(fromDay, duration=state.duration){
+  for(let d=fromDay+1; d<=duration; d++){
+    if(!hasDayContent(state.entries[d] || {})) return d;
+  }
+  return 0;
 }
 document.getElementById("openBtn").onclick=()=>{
   // 按所选周期自动续写：优先进入第一天未完成的日记；全完成则停在最后一天。
@@ -548,7 +556,16 @@ document.getElementById("saveEvening").onclick=()=>{
   e.completed=true; save();
   const stTxt={done:"✨ 完成了",part:"🌱 部分发生",none:"🔜 还没发生（也很好）"}[e.status];
   document.getElementById("eveningRecap").innerHTML = e.evening ? `<div class="recap"><div class="head">🌙 夜晚回看 · ${stTxt||""}</div><div class="body">${escapeHtml(e.evening)}</div></div>` : "";
-  document.getElementById("eveningTip").textContent="已保存 ✓"; toast("夜晚已保存"); updateStats(); updateAfterDayTools();
+  document.getElementById("eveningTip").textContent="已保存 ✓";
+  updateStats(); updateAfterDayTools();
+  const next=findNextEmptyDay(cur);
+  if(next){
+    cur=next; state.day=cur; render();
+    toast(`第 ${cur-1} 天已保存，自动进入第 ${cur} 天`);
+  }else{
+    render();
+    toast("已保存！本周期每天都已有内容，可以回看或导出备份");
+  }
 };
 function updateStats(){ /* 已移除进度统计，保留空函数兼容原有保存流程 */ }
 document.querySelectorAll("#statusOpts button").forEach(b=>b.onclick=()=>{
