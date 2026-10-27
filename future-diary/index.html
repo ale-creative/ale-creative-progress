@@ -164,6 +164,9 @@
   .stat b{display:block;font-size:27px;color:var(--gold);font-family:"Ma Shan Zheng",cursive;}
   .stat span{font-size:13.5px;color:var(--muted);}
 
+  .clear-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px;}
+  .clear-actions button{font-family:"Noto Serif SC",serif;cursor:pointer;border:1px solid #d8c8b2;border-radius:12px;padding:10px 13px;background:#fffaf2;color:#806a50;font-size:14px;flex:1;min-width:130px;}
+  .clear-actions button.danger{border-color:#d8a59a;color:#a4493b;background:#fff5f2;}
   .footer-actions{display:flex;gap:10px;justify-content:center;margin-top:26px;flex-wrap:wrap;}
   .footer-actions button{
     font-family:"Noto Serif SC",serif;cursor:pointer;border:1.5px solid var(--line);
@@ -339,6 +342,11 @@
     <button id="exportBtn">保存全部文字备份　↓</button>
     <button id="backCover">← 回到主页</button>
   </div>
+  <div class="clear-actions" aria-label="清理日记">
+    <button id="clearDayBtn" type="button">清空当天内容</button>
+    <button id="resetCycleBtn" class="danger" type="button">重置整个周期</button>
+  </div>
+  <p style="margin:8px 2px 0;color:var(--muted);font-size:12px;line-height:1.6;">清空当天只删除当前这一天；重置整个周期会删除本周期全部日记，操作前会再次确认。建议先导出文字备份。</p>
 </div>
 
 <!-- ============ MENU ============ -->
@@ -903,6 +911,17 @@ document.getElementById("exportBtn").onclick=()=>{
   const url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;
   a.download=`3分钟未来日记-${state.duration}天-文字备份.txt`;a.click();setTimeout(()=>URL.revokeObjectURL(url),1500);
   toast(count?`已导出 ${count} 天记录`:"已导出空白备份文件");
+};
+document.getElementById("clearDayBtn").onclick=()=>{
+  const day=cur;
+  if(!confirm(`确定清空第 ${day} 天的全部内容吗？这一天的早晨、感受、夜晚回看都会被删除，其他日期不受影响。`)) return;
+  state.entries[day]={morning:"",emotions:[],status:"",evening:"",review:"",completed:false};
+  save(); render(); toast(`第 ${day} 天已清空`);
+};
+document.getElementById("resetCycleBtn").onclick=()=>{
+  if(!confirm(`确定重置整个 ${state.duration} 天周期吗？本周期所有日记都会被删除，且无法撤销。建议先保存全部文字备份。`)) return;
+  state.entries={}; state.startDate=localISODate(); cur=1; state.day=1;
+  save(); showDiary(); toast("已重置整个周期，从第1天重新开始");
 };
 document.getElementById("backCover").onclick=()=>{ document.getElementById("diary").classList.add("hidden"); document.getElementById("cover").classList.remove("hidden"); buildCover(); };
 
