@@ -289,16 +289,21 @@
 
   <!-- EVENING -->
   <div class="card">
-    <h3>🌙 夜晚 · 回来看（睡前 1 分钟）</h3>
-    <div class="label">你早上写的事，现在怎样了？</div>
+    <h3>🌙 晚上 · 回顾今天</h3>
+    <div class="label">① 早上的期待，今天发生了吗？</div>
     <div class="status-opt" id="statusOpts">
       <button data-s="done">✨ 完成了</button>
       <button data-s="part">🌱 部分发生</button>
       <button data-s="none">🔜 还没发生（也很好）</button>
     </div>
-    <div class="label">回看发现 / 此刻想记下的</div>
+    <div class="label">② 今天真实发生的好事</div>
+    <p style="margin:0 0 8px;color:var(--muted);font-size:13.5px;line-height:1.7;">不一定是早上期待的事情，也可以是一件意料之外的小幸运。</p>
     <div class="write-block" style="padding:14px 16px;">
-      <textarea id="eveningText" placeholder="比如：虽然没完全如愿，但今天确实多了一个小幸运……"></textarea>
+      <textarea id="todayGoodText" placeholder="今天有什么值得记下的好事？哪怕只是一件很小的事……"></textarea>
+    </div>
+    <div class="label">③ 写给明天的自己</div>
+    <div class="write-block" style="padding:14px 16px;">
+      <textarea id="tomorrowNoteText" style="min-height:110px;" placeholder="给明天的自己留一句话吧……"></textarea>
     </div>
     <div id="eveningRecap"></div>
     <div class="row-btns">
@@ -476,7 +481,13 @@ function save(){
   try{ localStorage.setItem(KEY,JSON.stringify(state)); return true; }
   catch(e){ toast("本地保存失败，请及时导出文字备份"); return false; }
 }
-function getEntry(d){ return state.entries[d] || (state.entries[d]={morning:"",emotions:[],status:"",evening:"",review:""}); }
+function getEntry(d){
+  const e=state.entries[d] || (state.entries[d]={morning:"",emotions:[],status:"",evening:"",review:""});
+  // 兼容旧版：旧 evening 内容迁移为“今天真实发生的好事”，保留原字段不删除。
+  if(!Object.prototype.hasOwnProperty.call(e,"todayGood")) e.todayGood=e.evening||"";
+  if(typeof e.tomorrowNote!=="string") e.tomorrowNote="";
+  return e;
+}
 function dateForDay(d){
   const base=state.startDate||localISODate();
   const date=new Date(`${base}T12:00:00`); date.setDate(date.getDate()+d-1);
@@ -514,6 +525,7 @@ function buildCover(){
 }
 function hasDayContent(e){
   return !!((e.morning||"").trim() || (e.evening||"").trim() ||
+    (e.todayGood||"").trim() || (e.tomorrowNote||"").trim() ||
     (e.review||"").trim() || (e.status||"") || (e.emotions||[]).length);
 }
 function findResumeDay(duration=state.duration){
@@ -575,10 +587,14 @@ function render(){
 
   // evening
   document.querySelectorAll("#statusOpts button").forEach(b=>b.classList.toggle("on", e.status===b.dataset.s));
-  document.getElementById("eveningText").value=e.evening||"";
+  document.getElementById("todayGoodText").value=e.todayGood||e.evening||"";
+  document.getElementById("tomorrowNoteText").value=e.tomorrowNote||"";
   const stTxt={done:"✨ 完成了",part:"🌱 部分发生",none:"🔜 还没发生（也很好）"}[e.status];
-  document.getElementById("eveningRecap").innerHTML = e.evening
-    ? `<div class="recap"><div class="head">🌙 夜晚回看 · ${stTxt||""}</div><div class="body">${escapeHtml(e.evening)}</div></div>` : "";
+  const recapParts=[];
+  if(e.todayGood||e.evening) recapParts.push(`<div class="head">☀ 今天真实发生的好事</div><div class="body">${escapeHtml(e.todayGood||e.evening)}</div>`);
+  if(e.tomorrowNote) recapParts.push(`<div class="head" style="margin-top:10px;">✉ 写给明天的自己</div><div class="body">${escapeHtml(e.tomorrowNote)}</div>`);
+  document.getElementById("eveningRecap").innerHTML = recapParts.length
+    ? `<div class="recap"><div class="head">🌙 晚上回顾 · ${stTxt||"已记录"}</div>${recapParts.join("")}</div>` : "";
 
   // review
 
@@ -614,7 +630,8 @@ function autoSaveField(id, field, tipId){
   });
 }
 autoSaveField("morningText","morning","morningTip");
-autoSaveField("eveningText","evening","eveningTip");
+autoSaveField("todayGoodText","todayGood","eveningTip");
+autoSaveField("tomorrowNoteText","tomorrowNote","eveningTip");
 window.addEventListener("pagehide",()=>{ try{ save(); }catch(e){} });
 
 /* =================== 保存 =================== */
@@ -625,11 +642,16 @@ document.getElementById("saveMorning").onclick=()=>{
 };
 document.getElementById("saveEvening").onclick=()=>{
   const e=getEntry(cur); const sel=document.querySelector("#statusOpts button.on");
-  e.status=sel?sel.dataset.s:""; e.evening=document.getElementById("eveningText").value.trim();
-  // “保存夜晚”代表这一天的记录流程已完成；状态选项描述的是期待是否发生，两者不是一回事。
+  e.status=sel?sel.dataset.s:"";
+  e.todayGood=document.getElementById("todayGoodText").value.trim();
+  e.tomorrowNote=document.getElementById("tomorrowNoteText").value.trim();
+  // 保存夜晚代表这一天的记录流程已完成；旧 evening 字段保留，避免覆盖旧版本数据。
   e.completed=true; save();
   const stTxt={done:"✨ 完成了",part:"🌱 部分发生",none:"🔜 还没发生（也很好）"}[e.status];
-  document.getElementById("eveningRecap").innerHTML = e.evening ? `<div class="recap"><div class="head">🌙 夜晚回看 · ${stTxt||""}</div><div class="body">${escapeHtml(e.evening)}</div></div>` : "";
+  const recapParts=[];
+  if(e.todayGood) recapParts.push(`<div class="head">☀ 今天真实发生的好事</div><div class="body">${escapeHtml(e.todayGood)}</div>`);
+  if(e.tomorrowNote) recapParts.push(`<div class="head" style="margin-top:10px;">✉ 写给明天的自己</div><div class="body">${escapeHtml(e.tomorrowNote)}</div>`);
+  document.getElementById("eveningRecap").innerHTML = recapParts.length ? `<div class="recap"><div class="head">🌙 晚上回顾 · ${stTxt||"已记录"}</div>${recapParts.join("")}</div>` : "";
   document.getElementById("eveningTip").textContent="已保存 ✓";
   updateStats(); updateAfterDayTools();
   const next=findNextEmptyDay(cur);
@@ -695,7 +717,8 @@ function syncCurrentFields(){
   e.emotions=activeEmotions();
   const sel=document.querySelector("#statusOpts button.on");
   e.status=sel?sel.dataset.s:(e.status||"");
-  e.evening=document.getElementById("eveningText").value;
+  e.todayGood=document.getElementById("todayGoodText").value;
+  e.tomorrowNote=document.getElementById("tomorrowNoteText").value;
   save();
   return e;
 }
@@ -734,8 +757,9 @@ document.getElementById("weekReviewBtn").onclick=()=>{
 document.getElementById("shareCardBtn").onclick=()=>{
   const e=syncCurrentFields();
   const status={done:"完成了",part:"部分发生",none:"还没发生"}[e.status]||"正在记录";
-  const text=`3 分钟未来日记\n第 ${cur} 天\n\n今天，我已经${e.morning||"写下一个美好的期待"}\n\n夜晚回看\n${e.evening||status}\n\n${(e.emotions||[]).join(" · ")}\n\n写下今天，明天就会来。`;
-  openReflection("✦ 分享卡片预览",`<div style="background:linear-gradient(145deg,#f7efe2,#fffaf2);border-radius:16px;padding:22px;color:#554637;"><div style="font-size:12px;letter-spacing:2px;color:#9a7957;">3 MINUTE FUTURE DIARY</div><h2 style="margin:12px 0;">第 ${cur} 天</h2><p>今天，我已经${safeText(e.morning)}</p><hr style="border:0;border-top:1px solid #ddcdb8;margin:18px 0;"><b>🌙 夜晚回看</b><p>${safeText(e.evening)}</p><p style="color:#9a7957;">${e.emotions&&e.emotions.length?e.emotions.map(escapeHtml).join(" · "):"写下今天，明天就会来。"}</p></div>`,text);
+  const good=e.todayGood||e.evening||"（还没有记录）";
+  const text=`3 分钟未来日记\n第 ${cur} 天\n\n今天，我已经${e.morning||"写下一个美好的期待"}\n\n今天真实发生的好事\n${good}\n\n写给明天的自己\n${e.tomorrowNote||"（还没有记录）"}\n\n${(e.emotions||[]).join(" · ")}\n\n写下今天，明天就会来。`;
+  openReflection("✦ 分享卡片预览",`<div style="background:linear-gradient(145deg,#f7efe2,#fffaf2);border-radius:16px;padding:22px;color:#554637;"><div style="font-size:12px;letter-spacing:2px;color:#9a7957;">3 MINUTE FUTURE DIARY</div><h2 style="margin:12px 0;">第 ${cur} 天</h2><p>今天，我已经${safeText(e.morning)}</p><hr style="border:0;border-top:1px solid #ddcdb8;margin:18px 0;"><b>☀ 今天真实发生的好事</b><p>${safeText(good)}</p><b>✉ 写给明天的自己</b><p>${safeText(e.tomorrowNote)}</p><p style="color:#9a7957;">${e.emotions&&e.emotions.length?e.emotions.map(escapeHtml).join(" · "):"写下今天，明天就会来。"}</p></div>`,text);
   document.getElementById("downloadShareCard").style.display="block";
 };
 function renderWeekTrail(){ /* 进度装饰已移除，避免重复标签干扰阅读 */ }
@@ -778,12 +802,14 @@ function downloadDiaryImage(startDay,endDay,title,mode="detail"){
     }
     const e=state.entries[d]||{};
     const morning=e.morning?.trim()?`今天，我已经${e.morning.trim()}`:"今天还没有写下期待。";
-    const evening=e.evening?.trim()?e.evening.trim():"夜晚还没有留下记录。";
+    const evening=e.todayGood?.trim()?e.todayGood.trim():(e.evening?.trim()?e.evening.trim():"今天还没有记录好事。");
+    const tomorrow=e.tomorrowNote?.trim()?e.tomorrowNote.trim():"还没有给明天的自己留言。";
     const morningLines=wrapCanvasText(measure,morning,maxTextW,bodyFont);
     const eveningLines=wrapCanvasText(measure,evening,maxTextW,bodyFont);
     const emotionLines=(e.emotions||[]).length?wrapCanvasText(measure,(e.emotions||[]).join(" · "),maxTextW,"23px serif"):[];
-    const h=330+morningLines.length*lineH+eveningLines.length*lineH+(emotionLines.length?emotionLines.length*32:0);
-    return {d,end,e,morningLines,eveningLines,emotionLines,h};
+    const tomorrowLines=wrapCanvasText(measure,tomorrow,maxTextW,bodyFont);
+    const h=390+morningLines.length*lineH+eveningLines.length*lineH+tomorrowLines.length*lineH+(emotionLines.length?emotionLines.length*32:0);
+    return {d,end,e,morningLines,eveningLines,tomorrowLines,emotionLines,h};
   });
   const canvasHeight=top+cards.reduce((sum,c)=>sum+c.h,0)+gap*Math.max(0,cards.length-1)+bottom;
   // Safety guard avoids silent browser canvas clipping for unexpected long entries.
@@ -830,9 +856,12 @@ function downloadDiaryImage(startDay,endDay,title,mode="detail"){
       c.fillStyle="#29241f";c.font=bodyFont;
       card.morningLines.forEach(line=>{c.fillText(line,textX,yy);yy+=lineH;});
       yy+=12;c.strokeStyle="#e9dfcf";c.lineWidth=1.3;c.setLineDash([3,5]);c.beginPath();c.moveTo(textX,yy);c.lineTo(W-textX,yy);c.stroke();c.setLineDash([]);yy+=38;
-      c.fillStyle="#b18a30";c.font="bold 22px serif";c.fillText(`夜晚回看　·　${statusText[e.status]||"继续记录"}`,textX,yy);yy+=43;
+      c.fillStyle="#b18a30";c.font="bold 22px serif";c.fillText(`今天真实发生的好事　·　${statusText[e.status]||"继续记录"}`,textX,yy);yy+=43;
       c.fillStyle="#29241f";c.font=bodyFont;
       card.eveningLines.forEach(line=>{c.fillText(line,textX,yy);yy+=lineH;});
+      yy+=10;c.fillStyle="#b18a30";c.font="bold 22px serif";c.fillText("写给明天的自己",textX,yy);yy+=43;
+      c.fillStyle="#29241f";c.font=bodyFont;
+      card.tomorrowLines.forEach(line=>{c.fillText(line,textX,yy);yy+=lineH;});
       if(card.emotionLines.length){ yy+=8;c.fillStyle="#95836a";c.font="23px serif";card.emotionLines.forEach(line=>{c.fillText(line,textX,yy);yy+=32;}); }
     }
     y+=card.h+gap;
@@ -993,7 +1022,11 @@ document.getElementById("exportBtn").onclick=()=>{
     if((e.morning||"").trim()) out+=`晨间期待：今天，我已经${e.morning.trim()}\n`;
     if(e.emotions&&e.emotions.length) out+=`感受：${e.emotions.join("、")}\n`;
     if(e.status) out+=`状态：${statusTxt}\n`;
-    if((e.evening||"").trim()) out+=`夜晚回看：${e.evening.trim()}\n`;
+    const good=(e.todayGood||e.evening||"").trim();
+    if(good) out+=`今天真实发生的好事：${good}\n`;
+    if((e.tomorrowNote||"").trim()) out+=`写给明天的自己：${e.tomorrowNote.trim()}\n`;
+    // 旧字段保留在数据中；若与迁移后的新字段相同，不在备份里重复输出。
+    if((e.evening||"").trim() && e.evening.trim()!==good) out+=`旧版夜晚记录：${e.evening.trim()}\n`;
     if((e.review||"").trim()) out+=`复盘：${e.review.trim()}\n`;
     out+="\n";
   }
@@ -1005,8 +1038,8 @@ document.getElementById("exportBtn").onclick=()=>{
 };
 document.getElementById("clearDayBtn").onclick=()=>{
   const day=cur;
-  if(!confirm(`确定清空第 ${day} 天的全部内容吗？这一天的早晨、感受、夜晚回看都会被删除，其他日期不受影响。`)) return;
-  state.entries[day]={morning:"",emotions:[],status:"",evening:"",review:"",completed:false};
+  if(!confirm(`确定清空第 ${day} 天的全部内容吗？这一天的早晨、感受、晚上回顾都会被删除，其他日期不受影响。`)) return;
+  state.entries[day]={morning:"",emotions:[],status:"",evening:"",todayGood:"",tomorrowNote:"",review:"",completed:false};
   save(); render(); toast(`第 ${day} 天已清空`);
 };
 document.getElementById("resetCycleBtn").onclick=()=>{
