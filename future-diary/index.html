@@ -743,15 +743,15 @@ document.getElementById("weekReviewBtn").onclick=()=>{
   for(let d=themeStart;d<=themeEnd;d++){
     if(themeForDay(d).name===theme.name){
       const e=state.entries[d];
-      if(e&&(e.morning||e.evening)) days.push({day:d,e});
+      if(e&&(e.morning||e.evening||e.todayGood||e.tomorrowNote)) days.push({day:d,e});
     }
   }
   const done=days.filter(x=>x.e.status==="done").length;
   let html=`<p>第 ${themeWeek} 周 · 第 ${themeStart}–${themeEnd} 天</p><p>主题：<b>${escapeHtml(theme.name)}</b></p><p>${escapeHtml(theme.trace)}</p>
     <p>这一周你留下了 <b>${days.length}</b> 天记录，其中 <b>${done}</b> 天标记为「完成了」。</p>`;
   if(!days.length) html+="<p>写下这个主题的日记后，就能在这里回看自己的记录。</p>";
-  else html+=days.map(({day,e})=>`<div style="border-top:1px solid var(--line);padding:10px 0;"><b>第 ${day} 天</b><p>☀ ${safeText(e.morning)}</p><p>🌙 ${safeText(e.evening)}</p><small>${e.status==="done"?"✨ 完成了":e.status==="none"?"🌱 还没完成":""}</small></div>`).join("");
-  const share=`我的主题回顾 · 第${themeWeek}周 · ${theme.name}\n${theme.trace}\n记录 ${days.length} 天 · 完成 ${done} 天\n`+days.map(({day,e})=>`第${day}天：${e.morning||"未填写"}${e.evening?"；回看："+e.evening:""}`).join("\n");
+  else html+=days.map(({day,e})=>`<div style="border-top:1px solid var(--line);padding:10px 0;"><b>第 ${day} 天</b><p>☀ ${safeText(e.morning)}</p><p>🌿 今日好事：${safeText(e.todayGood||e.evening)}</p><p>✉ 明日寄语：${safeText(e.tomorrowNote)}</p><small>${e.status==="done"?"✨ 完成了":e.status==="none"?"🌱 还没完成":""}</small></div>`).join("");
+  const share=`我的主题回顾 · 第${themeWeek}周 · ${theme.name}\n${theme.trace}\n记录 ${days.length} 天 · 完成 ${done} 天\n`+days.map(({day,e})=>`第${day}天：${e.morning||"未填写"}；今日好事：${e.todayGood||e.evening||"未填写"}；写给明天：${e.tomorrowNote||"未填写"}`).join("\n");
   openReflection("📖 第 "+themeWeek+" 周 · "+theme.name,html,share);
 };
 document.getElementById("shareCardBtn").onclick=()=>{
@@ -793,7 +793,7 @@ function downloadDiaryImage(startDay,endDay,title,mode="detail"){
       let recordDays=0, done=0, part=0, snippets=[];
       for(let n=d;n<=end;n++){
         const e=state.entries[n]||{};
-        if((e.morning||"").trim()||(e.evening||"").trim()) recordDays++;
+        if((e.morning||"").trim()||(e.evening||"").trim()||(e.todayGood||"").trim()||(e.tomorrowNote||"").trim()) recordDays++;
         if(e.status==="done") done++; if(e.status==="part") part++;
         if((e.morning||"").trim() && snippets.length<2) snippets.push(e.morning.trim());
       }
@@ -821,7 +821,7 @@ function downloadDiaryImage(startDay,endDay,title,mode="detail"){
   c.fillStyle="#b49a64"; c.font="23px serif"; c.textAlign="center"; c.fillText(`3分钟未来日记   ·   ${total} 天`,W/2,72);
   c.fillStyle="#2b2620"; c.font="bold 46px serif"; c.fillText("我的未来日记",W/2,132);
   c.fillStyle="#9a8d7b"; c.font="22px serif"; c.fillText(dateRange(startDay,endDay),W/2,177);
-  const written=Array.from({length:endDay-startDay+1},(_,i)=>state.entries[startDay+i]||{}).filter(e=>(e.morning||"").trim()||(e.evening||"").trim()).length;
+  const written=Array.from({length:endDay-startDay+1},(_,i)=>state.entries[startDay+i]||{}).filter(e=>(e.morning||"").trim()||(e.evening||"").trim()||(e.todayGood||"").trim()||(e.tomorrowNote||"").trim()).length;
   const done=Array.from({length:endDay-startDay+1},(_,i)=>state.entries[startDay+i]||{}).filter(e=>e.status==="done").length;
   const part=Array.from({length:endDay-startDay+1},(_,i)=>state.entries[startDay+i]||{}).filter(e=>e.status==="part").length;
   const statsY=214, statsH=98;
@@ -909,7 +909,7 @@ function downloadPeriodShareCard(){
   if(!isFullCycleCompleted()){ toast("完成全部日期的日记任务后，即可解锁周期纪念分享卡"); return; }
   const total=state.duration;
   const all=Array.from({length:total},(_,i)=>state.entries[i+1]||{});
-  const recorded=all.filter(e=>(e.morning||"").trim()||(e.evening||"").trim()).length;
+  const recorded=all.filter(e=>(e.morning||"").trim()||(e.evening||"").trim()||(e.todayGood||"").trim()||(e.tomorrowNote||"").trim()).length;
   const done=all.filter(e=>e.status==="done").length;
   const part=all.filter(e=>e.status==="part").length;
   const emotions={};
