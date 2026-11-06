@@ -281,7 +281,7 @@
     <div class="label">④ 句尾加一句感受（可多选 / 自填）</div>
     <div class="chips" id="emotionChips"></div>
     <div class="row-btns" style="margin-top:10px;">
-      <input id="customEmotionInput" type="text" maxlength="30" placeholder="写下自己的感受" style="flex:1;min-width:0;padding:11px 14px;border:1px solid var(--line);border-radius:22px;background:#fffdf8;color:var(--ink);font:inherit;font-size:15px;">
+      <input id="customEmotionInput" type="text" maxlength="20" placeholder="补充一个感受词（最多2个）" style="flex:1;min-width:0;padding:11px 14px;border:1px solid var(--line);border-radius:22px;background:#fffdf8;color:var(--ink);font:inherit;font-size:15px;">
       <button type="button" class="ghost" id="addEmotionBtn" style="padding:9px 16px;">添加</button>
     </div>
 
@@ -631,7 +631,7 @@ function renderRecap(id, text, emotions, head){
 }
 function escapeHtml(s){ return (s||"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
 function activeEmotions(){ return [...document.querySelectorAll("#emotionChips button.on")].map(b=>b.textContent); }
-function addCustomEmotion(){ const input=document.getElementById("customEmotionInput"); const value=(input.value||"").trim(); if(!value) return; const e=getEntry(cur); if(!e.emotions.includes(value)) e.emotions.push(value); save(); render(); document.getElementById("morningTip").textContent="自定义感受已保存 ✓"; }
+function addCustomEmotion(){ const input=document.getElementById("customEmotionInput"); const value=(input.value||"").trim(); if(!value) return; const e=getEntry(cur); if(e.emotions.includes(value)){ input.value=""; toast("这个感受已经添加过了"); return; } const customCount=e.emotions.filter(x=>!EMOTIONS.includes(x)).length; if(customCount>=2){ toast("每一天最多补充2个自定义感受"); return; } e.emotions.push(value); save(); render(); document.getElementById("morningTip").textContent="自定义感受已保存 ✓"; }
 document.getElementById("addEmotionBtn").onclick=addCustomEmotion;
 document.getElementById("customEmotionInput").addEventListener("keydown",ev=>{ if(ev.key==="Enter"){ ev.preventDefault(); addCustomEmotion(); } });
 
