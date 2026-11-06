@@ -280,6 +280,10 @@
 
     <div class="label">④ 句尾加一句感受（可多选 / 自填）</div>
     <div class="chips" id="emotionChips"></div>
+    <div class="row-btns" style="margin-top:10px;">
+      <input id="customEmotionInput" type="text" maxlength="30" placeholder="写下自己的感受" style="flex:1;min-width:0;padding:11px 14px;border:1px solid var(--line);border-radius:22px;background:#fffdf8;color:var(--ink);font:inherit;font-size:15px;">
+      <button type="button" class="ghost" id="addEmotionBtn" style="padding:9px 16px;">添加</button>
+    </div>
 
     <div class="row-btns">
       <button class="save" id="saveMorning">保存早晨</button>
@@ -448,7 +452,7 @@ function traceForDay(d){
   const themeIndex = state.duration===7 ? (d-1)%7 : Math.floor(index/7);
   return DAILY_TRACES[themeIndex][index%7];
 }
-const EMOTIONS = ["谢谢！","太棒了！","真的是太好了","好开心","感恩"];
+const EMOTIONS = ["开心","轻松","安心","满足","感动","期待"];
 const DURATIONS = [7,49,365];
 
 /* =================== 状态 =================== */
@@ -591,7 +595,8 @@ function render(){
   // morning
   document.getElementById("morningText").value=e.morning||"";
   const chips=document.getElementById("emotionChips"); chips.innerHTML="";
-  EMOTIONS.forEach(em=>{ const b=document.createElement("button"); b.textContent=em; if((e.emotions||[]).includes(em)) b.classList.add("on"); b.onclick=()=>{ b.classList.toggle("on"); const e=getEntry(cur); e.emotions=activeEmotions(); save(); document.getElementById("morningTip").textContent="已自动保存 ✓"; }; chips.appendChild(b); });
+  [...new Set([...EMOTIONS,...(e.emotions||[])])].forEach(em=>{ const b=document.createElement("button"); b.textContent=em; if((e.emotions||[]).includes(em)) b.classList.add("on"); b.onclick=()=>{ b.classList.toggle("on"); const entry=getEntry(cur); entry.emotions=activeEmotions(); save(); document.getElementById("morningTip").textContent="已自动保存 ✓"; }; chips.appendChild(b); });
+  document.getElementById("customEmotionInput").value="";
   renderRecap("morningRecap", e.morning, e.emotions, "今日已写下");
 
   // evening
@@ -626,6 +631,9 @@ function renderRecap(id, text, emotions, head){
 }
 function escapeHtml(s){ return (s||"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
 function activeEmotions(){ return [...document.querySelectorAll("#emotionChips button.on")].map(b=>b.textContent); }
+function addCustomEmotion(){ const input=document.getElementById("customEmotionInput"); const value=(input.value||"").trim(); if(!value) return; const e=getEntry(cur); if(!e.emotions.includes(value)) e.emotions.push(value); save(); render(); document.getElementById("morningTip").textContent="自定义感受已保存 ✓"; }
+document.getElementById("addEmotionBtn").onclick=addCustomEmotion;
+document.getElementById("customEmotionInput").addEventListener("keydown",ev=>{ if(ev.key==="Enter"){ ev.preventDefault(); addCustomEmotion(); } });
 
 /* 自动保存：输入变化后立即写入本地存储 */
 function autoSaveField(id, field, tipId){
