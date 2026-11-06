@@ -490,6 +490,10 @@ function getEntry(d){
   // 兼容旧版：旧 evening 内容迁移为“今天真实发生的好事”，保留原字段不删除。
   if(!Object.prototype.hasOwnProperty.call(e,"todayGood")) e.todayGood=e.evening||"";
   if(typeof e.tomorrowNote!=="string") e.tomorrowNote="";
+  // 将自定义感受单独保存，避免固定标签的勾选/取消影响每日数量限制。
+  if(!Array.isArray(e.customEmotions)){
+    e.customEmotions=[...new Set((e.emotions||[]).filter(x=>!EMOTIONS.includes(x)))];
+  }
   return e;
 }
 function dateForDay(d){
@@ -596,7 +600,14 @@ function render(){
   document.getElementById("morningText").value=e.morning||"";
   const chips=document.getElementById("emotionChips"); chips.innerHTML="";
   [...new Set([...EMOTIONS,...(e.emotions||[])])].forEach(em=>{ const b=document.createElement("button"); b.textContent=em; if((e.emotions||[]).includes(em)) b.classList.add("on"); b.onclick=()=>{ b.classList.toggle("on"); const entry=getEntry(cur); entry.emotions=activeEmotions(); save(); document.getElementById("morningTip").textContent="已自动保存 ✓"; }; chips.appendChild(b); });
-  document.getElementById("customEmotionInput").value="";
+  const customInput=document.getElementById("customEmotionInput");
+  customInput.value="";
+  const addBtn=document.getElementById("addEmotionBtn");
+  const customLimitReached=e.customEmotions.length>=2;
+  addBtn.disabled=customLimitReached;
+  addBtn.textContent=customLimitReached?"已达上限":"添加";
+  customInput.disabled=customLimitReached;
+  customInput.placeholder=customLimitReached?"今天的自定义感受已满2个":"补充一个感受词（最多2个）";
   renderRecap("morningRecap", e.morning, e.emotions, "今日已写下");
 
   // evening
@@ -631,7 +642,25 @@ function renderRecap(id, text, emotions, head){
 }
 function escapeHtml(s){ return (s||"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
 function activeEmotions(){ return [...document.querySelectorAll("#emotionChips button.on")].map(b=>b.textContent); }
-function addCustomEmotion(){ const input=document.getElementById("customEmotionInput"); const value=(input.value||"").trim(); if(!value) return; const e=getEntry(cur); if(e.emotions.includes(value)){ input.value=""; toast("这个感受已经添加过了"); return; } const customCount=e.emotions.filter(x=>!EMOTIONS.includes(x)).length; if(customCount>=2){ toast("每一天最多补充2个自定义感受"); return; } e.emotions.push(value); save(); render(); document.getElementById("morningTip").textContent="自定义感受已保存 ✓"; }
+function addCustomEmotion(){
+  const input=document.getElementById("customEmotionInput");
+  const value=(input.value||"").trim();
+  if(!value) return;
+  const e=getEntry(cur);
+  // 以独立数组作为唯一计数依据；无论点击还是回车，都在写入前再次校验。
+  if(!Array.isArray(e.customEmotions)) e.customEmotions=[...new Set((e.emotions||[]).filter(x=>!EMOTIONS.includes(x)))];
+  if(e.customEmotions.includes(value) || e.emotions.includes(value)){
+    input.value=""; toast("这个感受已经添加过了"); return;
+  }
+  if(e.customEmotions.length>=2){
+    input.value=""; toast("每一天最多补充2个自定义感受"); return;
+  }
+  e.customEmotions.push(value);
+  e.emotions.push(value);
+  save();
+  render();
+  document.getElementById("morningTip").textContent="自定义感受已保存 ✓";
+}
 document.getElementById("addEmotionBtn").onclick=addCustomEmotion;
 document.getElementById("customEmotionInput").addEventListener("keydown",ev=>{ if(ev.key==="Enter"){ ev.preventDefault(); addCustomEmotion(); } });
 
