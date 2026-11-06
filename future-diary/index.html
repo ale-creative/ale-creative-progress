@@ -542,17 +542,26 @@ function findNextEmptyDay(fromDay, duration=state.duration){
   }
   return 0;
 }
+function ensureUserStartDate(){
+  // 只有在用户尚无任何实际记录时，才把首次正式开始日期设为当天。
+  // 旧用户只要已有记录，就保留原 startDate，避免历史日期整体平移。
+  const hasAnyRecord=Object.values(state.entries||{}).some(e=>hasDayContent(e||{}));
+  if(!hasAnyRecord || !/^\\d{4}-\\d{2}-\\d{2}$/.test(state.startDate||"")){
+    state.startDate=localISODate();
+  }
+}
 document.getElementById("openBtn").onclick=()=>{
-  // 按所选周期自动续写：优先进入第一天未完成的日记；全完成则停在最后一天。
+  // 首次正式开始时，以用户点击「翻开」当天作为第1天；已有日记则沿用原起始日期。
+  ensureUserStartDate();
   cur=findResumeDay(state.duration);
   state.day=cur;
-  if(!state.startDate) state.startDate=localISODate();
   save();
   showDiary();
 };
 document.getElementById("resumeLink").onclick=()=>{
   load();
-  if(!state.startDate) state.startDate=localISODate();
+  // 空白周期不沿用网页初次初始化/旧测试留下的日期；有实际记录则绝不改动。
+  ensureUserStartDate();
   cur=findResumeDay(state.duration);
   state.day=cur;
   save();
